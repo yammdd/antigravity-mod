@@ -87,11 +87,16 @@
       "artifactName": "Antigravity-Themes-${version}.exe"
     },
     "mac": {
+      "icon": "build/icon.png",
+      "artifactName": "Antigravity-Themes-${version}-${arch}.${ext}",
       "target": [
         "dmg"
       ]
     },
     "linux": {
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "artifactName": "Antigravity-Themes-${version}-${arch}.${ext}",
       "target": [
         "AppImage"
       ]
