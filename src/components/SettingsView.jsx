@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Activity, Download, FolderOpen, RefreshCw, RotateCcw, Upload, Wrench } from 'lucide-react';
+import { Activity, ArrowUpRight, CheckCircle2, Download, FolderOpen, RefreshCw, RotateCcw, Upload, Wrench } from 'lucide-react';
 import ToggleRow from './ui/ToggleRow.jsx';
 
 export default function SettingsView({
   t,
+  appVersion = '1.1.0',
   config,
   cdpStatus,
   argvStatus,
@@ -17,9 +18,24 @@ export default function SettingsView({
   onExportBackup,
   onImportBackup,
   onResetConfig,
+  onCheckForUpdates,
+  onOpenExternal,
 }) {
   const [domReport, setDomReport] = useState(null);
   const [inspecting, setInspecting] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState(null);
+
+  const handleCheckUpdate = async () => {
+    if (!onCheckForUpdates) return;
+    setCheckingUpdate(true);
+    try {
+      const res = await onCheckForUpdates();
+      setUpdateInfo(res);
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
 
   const handleInspect = async () => {
     if (!window.themeAPI) return;
@@ -175,29 +191,77 @@ export default function SettingsView({
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-title">{t.settingsBackup}</div>
-        <div className="header-actions" style={{ flexWrap: 'wrap' }}>
-          <button type="button" className="btn" onClick={onExportBackup}>
-            <Download size={15} strokeWidth={1.5} />
-            <span>{t.exportJson}</span>
-          </button>
-          <button type="button" className="btn" onClick={onImportBackup}>
-            <Upload size={15} strokeWidth={1.5} />
-            <span>{t.importJson}</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => window.themeAPI?.openDataDir()}
-          >
-            <FolderOpen size={15} strokeWidth={1.5} />
-            <span>{t.openDataDir}</span>
-          </button>
-          <button type="button" className="btn btn-danger" onClick={onResetConfig}>
-            <RotateCcw size={15} strokeWidth={1.5} />
-            <span>{t.resetDefaults}</span>
-          </button>
+      <div className="grid-2">
+        <div className="card">
+          <div className="card-title">{t.settingsBackup}</div>
+          <div className="header-actions" style={{ flexWrap: 'wrap' }}>
+            <button type="button" className="btn" onClick={onExportBackup}>
+              <Download size={15} strokeWidth={1.5} />
+              <span>{t.exportJson}</span>
+            </button>
+            <button type="button" className="btn" onClick={onImportBackup}>
+              <Upload size={15} strokeWidth={1.5} />
+              <span>{t.importJson}</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => window.themeAPI?.openDataDir()}
+            >
+              <FolderOpen size={15} strokeWidth={1.5} />
+              <span>{t.openDataDir}</span>
+            </button>
+            <button type="button" className="btn btn-danger" onClick={onResetConfig}>
+              <RotateCcw size={15} strokeWidth={1.5} />
+              <span>{t.resetDefaults}</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">App Updates</div>
+              <div className="card-desc">
+                Installed version: <span className="mono">v{appVersion}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn"
+              disabled={checkingUpdate}
+              onClick={handleCheckUpdate}
+            >
+              <RefreshCw size={14} strokeWidth={1.5} />
+              <span>{checkingUpdate ? 'Checking...' : 'Check for updates'}</span>
+            </button>
+          </div>
+
+          {updateInfo && (
+            <div className={`update-banner ${updateInfo.ok ? (updateInfo.updateAvailable ? 'avail' : 'ok') : 'err'}`}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {updateInfo.ok && !updateInfo.updateAvailable && <CheckCircle2 size={15} strokeWidth={1.7} />}
+                <span>
+                  {!updateInfo.ok
+                    ? updateInfo.error
+                    : updateInfo.updateAvailable
+                      ? `New release available: ${updateInfo.latestTag}`
+                      : `Up to date (latest: ${updateInfo.latestTag || `v${appVersion}`})`}
+                </span>
+              </div>
+              {updateInfo.ok && updateInfo.updateAvailable && onOpenExternal && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ height: 28, padding: '0 10px' }}
+                  onClick={() => onOpenExternal(updateInfo.releaseUrl)}
+                >
+                  <span>Open Release</span>
+                  <ArrowUpRight size={14} strokeWidth={1.7} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

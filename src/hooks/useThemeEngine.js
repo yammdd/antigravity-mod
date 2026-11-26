@@ -293,6 +293,24 @@ export function useThemeEngine() {
     else if (res?.added > 0) showToast('Imported and enabled Theme Pack');
   }, [showToast]);
 
+  const importPackZip = useCallback(async () => {
+    if (!window.themeAPI) return;
+    const res = await window.themeAPI.importPackZip();
+    if (res?.state) setState((prev) => ({ ...prev, ...res.state }));
+    if (res?.error) showToast(res.error);
+    else if (res?.added > 0) showToast(`Imported ${res.added} Theme Pack ZIP${res.added > 1 ? 's' : ''}`);
+  }, [showToast]);
+
+  const exportPackZip = useCallback(
+    async (themeId) => {
+      if (!window.themeAPI) return;
+      const res = await window.themeAPI.exportPackZip(themeId);
+      if (res?.ok) showToast(`Exported pack ZIP to ${res.filePath}`);
+      else if (res?.error) showToast(`Export failed: ${res.error}`);
+    },
+    [showToast]
+  );
+
   const runSetup = useCallback(
     async (options) => {
       if (!window.themeAPI) {
@@ -500,6 +518,46 @@ export function useThemeEngine() {
     else if (res?.error) showToast(res.error);
   }, [showToast]);
 
+  const syncExternalTerminal = useCallback(
+    async (termName) => {
+      if (!window.themeAPI) return null;
+      const res = await window.themeAPI.syncExternalTerminal(termName);
+      if (res?.state) setState((prev) => ({ ...prev, ...res.state }));
+      if (res?.ok) {
+        showToast(res.note ? `${termName}: ${res.note}` : `Synced ${termName} config (${res.path})`);
+      } else if (res?.error) {
+        showToast(res.error);
+      }
+      return res;
+    },
+    [showToast]
+  );
+
+  const exportCliPreset = useCallback(async () => {
+    if (!window.themeAPI) return;
+    const res = await window.themeAPI.exportCliPreset();
+    if (res?.ok) showToast(`Exported CLI preset to ${res.filePath}`);
+  }, [showToast]);
+
+  const importCliPreset = useCallback(async () => {
+    if (!window.themeAPI) return;
+    const res = await window.themeAPI.importCliPreset();
+    if (res?.state) setState((prev) => ({ ...prev, ...res.state }));
+    if (res?.ok) showToast(`Imported CLI preset: ${res.name}`);
+    else if (res?.error) showToast(`Import failed: ${res.error}`);
+  }, [showToast]);
+
+  const checkForUpdates = useCallback(async () => {
+    if (!window.themeAPI) {
+      return { ok: true, currentVersion: '1.1.0', latestVersion: '1.1.0', updateAvailable: false };
+    }
+    return window.themeAPI.checkForUpdates();
+  }, []);
+
+  const openExternal = useCallback((url) => {
+    window.themeAPI?.openExternal(url);
+  }, []);
+
   // --- IDE & App integration ---
   const configureArgv = useCallback(
     async (enable = true) => {
@@ -575,6 +633,8 @@ export function useThemeEngine() {
     deleteLocalTheme,
     importThemes,
     importPack,
+    importPackZip,
+    exportPackZip,
     runSetup,
     uninstallAll,
     reloadAllThemes,
@@ -593,6 +653,11 @@ export function useThemeEngine() {
     restoreWindowsTerminal,
     launchCliTerminal,
     pickCliBgImage,
+    syncExternalTerminal,
+    exportCliPreset,
+    importCliPreset,
+    checkForUpdates,
+    openExternal,
     configureArgv,
     launchTarget,
     toggleAutoStart,

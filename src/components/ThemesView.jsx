@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Archive,
   Check,
+  Download,
   ExternalLink,
   Film,
   FolderOpen,
@@ -27,6 +29,8 @@ export default function ThemesView({
   onDeleteTheme,
   onImportThemes,
   onImportPack,
+  onImportPackZip,
+  onExportPackZip,
   onReloadAll,
   onSetOnlineUrls,
 }) {
@@ -112,6 +116,10 @@ export default function ThemesView({
           <button type="button" className="btn" onClick={onImportThemes}>
             <Upload size={15} strokeWidth={1.5} />
             <span>{t.importCss}</span>
+          </button>
+          <button type="button" className="btn" onClick={onImportPackZip}>
+            <Archive size={15} strokeWidth={1.5} />
+            <span>Import .zip</span>
           </button>
           <button type="button" className="btn" onClick={onImportPack}>
             <FolderPlus size={15} strokeWidth={1.5} />
@@ -388,6 +396,16 @@ export default function ThemesView({
                       )}
                     </button>
 
+                    {theme.kind === 'pack' && onExportPackZip && (
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        title="Export shareable .zip pack"
+                        onClick={() => onExportPackZip(themeId)}
+                      >
+                        <Download size={14} strokeWidth={1.5} />
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="icon-btn"

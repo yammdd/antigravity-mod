@@ -142,6 +142,28 @@ export const CLI_FONT_SUGGESTIONS = [
 
 export const CLI_PREFIX_SYMBOLS = ['◆', '▲', '›', '●', ''];
 
+export const CLI_SHADER_OPTIONS = [
+  { id: 'none', label: 'None' },
+  { id: 'subtle-vignette', label: 'Vignette' },
+  { id: 'soft-bloom', label: 'Soft Bloom' },
+  { id: 'crt-scanlines', label: 'CRT Lines' },
+];
+
+export const CLI_PALETTE_FIELDS = [
+  { key: 'background', label: 'Background' },
+  { key: 'foreground', label: 'Foreground' },
+  { key: 'cursorColor', label: 'Cursor' },
+  { key: 'selectionBackground', label: 'Selection' },
+  { key: 'red', label: 'ANSI Red' },
+  { key: 'green', label: 'ANSI Green' },
+  { key: 'yellow', label: 'ANSI Yellow' },
+  { key: 'blue', label: 'ANSI Blue' },
+  { key: 'purple', label: 'ANSI Purple' },
+  { key: 'cyan', label: 'ANSI Cyan' },
+  { key: 'brightBlack', label: 'Muted / Gray' },
+  { key: 'white', label: 'White' },
+];
+
 export const CSS_TOKEN_REFERENCE = [
   { token: '--ag-accent', sample: '--ag-accent: #3b82f6;', desc: 'Primary accent color' },
   { token: '--ag-surface-rgb', sample: '--ag-surface-rgb: 20, 20, 21;', desc: 'Base RGB surface tint' },

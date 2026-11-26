@@ -224,7 +224,7 @@ export default function PreviewCanvas({
                   <div style={{ color: fgMuted }}>Explorer</div>
                   <div style={{ color: fgPrimary }}>rainy-window/</div>
                   <div style={{ paddingLeft: 8, color: fgMuted }}>shared.css</div>
-                  <div style={{ paddingLeft: 8, color: fgMuted }}>backdrop.webp</div>
+                  <div style={{ paddingLeft: 8, color: fgMuted }}>backdrop.jpg</div>
                 </div>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>

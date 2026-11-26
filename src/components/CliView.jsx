@@ -4,12 +4,16 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Download,
   FlaskConical,
+  HardDriveDownload,
   History,
   ImagePlus,
+  Palette,
   Play,
   RotateCcw,
   Terminal,
+  Upload,
   X,
 } from 'lucide-react';
 import SliderField from './ui/SliderField.jsx';
@@ -22,7 +26,9 @@ import {
   CLI_COLOR_SCHEMES,
   CLI_CURSOR_SHAPES,
   CLI_FONT_SUGGESTIONS,
+  CLI_PALETTE_FIELDS,
   CLI_PREFIX_SYMBOLS,
+  CLI_SHADER_OPTIONS,
   CLI_SPINNER_SPEEDS,
   CLI_STATUSLINE_PRESETS,
 } from '../constants/presets.js';
@@ -94,13 +100,18 @@ export default function CliView({
   onRestoreWindowsTerminal,
   onLaunchCliTerminal,
   onPickCliBgImage,
+  onSyncExternalTerminal,
+  onExportCliPreset,
+  onImportCliPreset,
   onShowToast,
 }) {
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const [showPaletteEditor, setShowPaletteEditor] = useState(false);
   const [hoveredBgId, setHoveredBgId] = useState('');
   const [pairWallpaper, setPairWallpaper] = useState(false);
   const [termTab, setTermTab] = useState('ghostty');
   const [copied, setCopied] = useState(false);
+  const [syncingExt, setSyncingExt] = useState(false);
   const [testingSl, setTestingSl] = useState(false);
   const [testResult, setTestResult] = useState(null);
 
@@ -189,6 +200,28 @@ export default function CliView({
     } finally {
       setTestingSl(false);
     }
+  };
+
+  const handleSyncExternal = async () => {
+    if (!onSyncExternalTerminal) return;
+    setSyncingExt(true);
+    try {
+      await onSyncExternalTerminal(termTab);
+    } finally {
+      setSyncingExt(false);
+    }
+  };
+
+  const handleCustomColorChange = (key, hex) => {
+    const base = { ...palette };
+    delete base.name;
+    patchCli(
+      {
+        presetId: 'custom',
+        customPalette: { ...base, [key]: hex },
+      },
+      false
+    );
   };
 
   // Render simulated live status bar inside the terminal preview
@@ -538,14 +571,32 @@ export default function CliView({
             </div>
           </div>
 
-          <label className="setup-checkbox" style={{ whiteSpace: 'nowrap' }}>
-            <input
-              type="checkbox"
-              checked={pairWallpaper}
-              onChange={(e) => setPairWallpaper(e.target.checked)}
-            />
-            <span>Pair matching wallpaper</span>
-          </label>
+          <div className="header-actions" style={{ flexWrap: 'wrap' }}>
+            <label className="setup-checkbox" style={{ whiteSpace: 'nowrap' }}>
+              <input
+                type="checkbox"
+                checked={pairWallpaper}
+                onChange={(e) => setPairWallpaper(e.target.checked)}
+              />
+              <span>Pair wallpaper</span>
+            </label>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setShowPaletteEditor((v) => !v)}
+            >
+              <Palette size={14} strokeWidth={1.5} />
+              <span>{showPaletteEditor ? 'Hide ANSI editor' : 'Customize ANSI'}</span>
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={onImportCliPreset} title="Import CLI preset (.json)">
+              <Upload size={14} strokeWidth={1.5} />
+              <span>Import JSON</span>
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={onExportCliPreset} title="Export active CLI preset (.json)">
+              <Download size={14} strokeWidth={1.5} />
+              <span>Export JSON</span>
+            </button>
+          </div>
         </div>
 
         <div className="cli-preset-grid">
@@ -590,6 +641,39 @@ export default function CliView({
             );
           })}
         </div>
+
+        {showPaletteEditor && (
+          <div className="cli-palette-drawer">
+            <div className="card-header" style={{ alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                  Custom 16-Color ANSI Palette {activePresetId === 'custom' ? '(Custom active)' : ''}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  Editing any swatch forks the active preset into a custom CLI palette.
+                </div>
+              </div>
+            </div>
+            <div className="cli-palette-grid">
+              {CLI_PALETTE_FIELDS.map((field) => {
+                const val = palette[field.key] || '#3b82f6';
+                return (
+                  <label key={field.key} className="cli-color-cell">
+                    <input
+                      type="color"
+                      value={val}
+                      onChange={(e) => handleCustomColorChange(field.key, e.target.value)}
+                    />
+                    <span className="cli-color-meta">
+                      <span className="cli-color-name">{field.label}</span>
+                      <span className="cli-color-hex mono">{val}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Section 2: Terminal Wallpaper, Animated GIF & Positioning */}
@@ -690,6 +774,13 @@ export default function CliView({
             </select>
           </div>
         </div>
+
+        {cliStatus?.ffmpegAvailable === false && (
+          <div className="cli-ffmpeg-hint">
+            GIFs, PNGs, and JPGs work natively. To auto-convert MP4/WebM videos into looping terminal GIFs, install{' '}
+            <span className="mono">ffmpeg</span> (<span className="mono">winget install Gyan.FFmpeg</span>).
+          </div>
+        )}
       </div>
 
       {/* Section 3: Two-Column Core Config (agy CLI + Status Bar | Windows Terminal + Typography) */}
@@ -925,6 +1016,16 @@ export default function CliView({
             </div>
           </div>
 
+          <div className="field">
+            <span className="field-head">Windows Terminal HLSL pixel shader</span>
+            <SegmentedControl
+              full
+              value={cli.terminalShader || 'none'}
+              onChange={(v) => patchCli({ terminalShader: v })}
+              options={CLI_SHADER_OPTIONS}
+            />
+          </div>
+
           <ToggleRow
             label={t.cliTermAcrylic}
             hint="Translucent Windows acrylic backdrop behind the terminal"
@@ -999,7 +1100,7 @@ export default function CliView({
             </div>
           </div>
 
-          <div className="header-actions">
+          <div className="header-actions" style={{ flexWrap: 'wrap' }}>
             <SegmentedControl
               value={termTab}
               onChange={setTermTab}
@@ -1010,7 +1111,17 @@ export default function CliView({
                 { id: 'alacritty', label: 'Alacritty' },
               ]}
             />
-            <button type="button" className="btn" onClick={handleCopySnippet}>
+            <button
+              type="button"
+              className="btn"
+              disabled={syncingExt}
+              onClick={handleSyncExternal}
+              title={`Write managed theme config for ${termTab} (creates .agthemes.bak backup)`}
+            >
+              <HardDriveDownload size={14} strokeWidth={1.5} />
+              <span>{syncingExt ? 'Writing...' : `Write ${termTab} config`}</span>
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={handleCopySnippet}>
               {copied ? <Check size={15} strokeWidth={1.5} /> : <Copy size={15} strokeWidth={1.5} />}
               <span>{copied ? t.copied : t.copy}</span>
             </button>

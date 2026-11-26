@@ -232,6 +232,8 @@ export default function App() {
                   onDeleteTheme={engine.deleteLocalTheme}
                   onImportThemes={engine.importThemes}
                   onImportPack={engine.importPack}
+                  onImportPackZip={engine.importPackZip}
+                  onExportPackZip={engine.exportPackZip}
                   onReloadAll={engine.reloadAllThemes}
                   onSetOnlineUrls={engine.setOnlineUrls}
                 />
@@ -294,6 +296,9 @@ export default function App() {
                   onRestoreWindowsTerminal={engine.restoreWindowsTerminal}
                   onLaunchCliTerminal={engine.launchCliTerminal}
                   onPickCliBgImage={engine.pickCliBgImage}
+                  onSyncExternalTerminal={engine.syncExternalTerminal}
+                  onExportCliPreset={engine.exportCliPreset}
+                  onImportCliPreset={engine.importCliPreset}
                   onShowToast={engine.showToast}
                 />
               )}
@@ -301,6 +306,7 @@ export default function App() {
               {activeTab === 'settings' && (
                 <SettingsView
                   t={t}
+                  appVersion={state.appVersion || '1.1.0'}
                   config={config}
                   cdpStatus={cdpStatus}
                   argvStatus={state.argvStatus}
@@ -314,6 +320,8 @@ export default function App() {
                   onExportBackup={engine.exportBackup}
                   onImportBackup={engine.importBackup}
                   onResetConfig={engine.resetConfig}
+                  onCheckForUpdates={engine.checkForUpdates}
+                  onOpenExternal={engine.openExternal}
                 />
               )}
             </div>
