@@ -367,6 +367,57 @@ function writeJsonWithBackup(filePath, obj) {
 
 const AGY_WT_PROFILE_GUID = '{a917a170-c110-4a91-9b0c-a917a1700001}';
 
+const CLI_SHADER_PRESETS = Object.freeze([
+  { id: 'none', name: 'None', file: '' },
+  { id: 'subtle-vignette', name: 'Subtle Vignette', file: 'subtle-vignette.hlsl' },
+  { id: 'soft-bloom', name: 'Soft Bloom', file: 'soft-bloom.hlsl' },
+  { id: 'crt-scanlines', name: 'CRT Scanlines', file: 'crt-scanlines.hlsl' },
+]);
+
+let cachedFfmpegAvailable = null;
+
+function isFfmpegAvailable() {
+  if (cachedFfmpegAvailable !== null) return cachedFfmpegAvailable;
+  try {
+    execFileSync('ffmpeg', ['-version'], { stdio: 'ignore', timeout: 2500, windowsHide: true });
+    cachedFfmpegAvailable = true;
+  } catch (_) {
+    cachedFfmpegAvailable = false;
+  }
+  return cachedFfmpegAvailable;
+}
+
+function resolveShaderSourcePath(fileName) {
+  if (!fileName) return '';
+  const candidates = [
+    path.resolve(__dirname, '..', 'assets', 'shaders', fileName),
+    process.resourcesPath ? path.join(process.resourcesPath, 'assets', 'shaders', fileName) : '',
+  ].filter(Boolean);
+  return candidates.find((p) => fs.existsSync(p)) || '';
+}
+
+/**
+ * Copies the selected bundled .hlsl shader to persistent <appBaseDir>/cli/shaders/
+ * so Windows Terminal keeps a valid path even after a portable .exe closes.
+ */
+function resolvePersistentShaderPath(shaderId, appBaseDir) {
+  if (!shaderId || shaderId === 'none') return '';
+  const meta = CLI_SHADER_PRESETS.find((s) => s.id === shaderId);
+  if (!meta || !meta.file) return '';
+  const srcPath = resolveShaderSourcePath(meta.file);
+  if (!srcPath) return '';
+  if (!appBaseDir) return srcPath;
+  try {
+    const destDir = path.join(appBaseDir, 'cli', 'shaders');
+    fs.mkdirSync(destDir, { recursive: true });
+    const destPath = path.join(destDir, meta.file);
+    fs.copyFileSync(srcPath, destPath);
+    return destPath;
+  } catch (_) {
+    return srcPath;
+  }
+}
+
 function resolveAgyExecutablePath() {
   if (process.platform === 'win32') {
     const localApp = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
@@ -507,6 +558,10 @@ function buildAnsiPalette(config) {
   const isLight = config?.colorMode === 'light';
   const ramp = getSurfaceRamp(config);
   const accent = config?.accentColor || '#3b82f6';
+  const custom =
+    presetId === 'custom' && config?.cli?.customPalette && typeof config.cli.customPalette === 'object'
+      ? config.cli.customPalette
+      : {};
 
   if (isLight) {
     return {
@@ -531,6 +586,8 @@ function buildAnsiPalette(config) {
       brightPurple: '#a475f9',
       brightCyan: '#0891b2',
       brightWhite: '#171717',
+      ...custom,
+      name: 'Antigravity CLI Theme',
     };
   }
 
@@ -556,6 +613,8 @@ function buildAnsiPalette(config) {
     brightPurple: '#b8a9ff',
     brightCyan: '#56ccd9',
     brightWhite: '#f4f4f5',
+    ...custom,
+    name: 'Antigravity CLI Theme',
   };
 }
 
@@ -563,6 +622,9 @@ function getCliAccentHex(config) {
   const presetId = config?.cli?.presetId;
   if (presetId && presetId !== 'custom' && CLI_THEME_PRESETS[presetId]) {
     return CLI_THEME_PRESETS[presetId].accent;
+  }
+  if (presetId === 'custom' && config?.cli?.customPalette?.blue) {
+    return config.cli.customPalette.blue;
   }
   return config?.accentColor || '#3b82f6';
 }
@@ -688,6 +750,16 @@ function getCliStatus() {
     wtProfileInstalled = list.some((p) => p && p.name === 'Antigravity CLI');
   }
 
+  const home = os.homedir();
+  const xdgConfig = process.env.XDG_CONFIG_HOME || path.join(home, '.config');
+  const appData = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
+  const detectedTerminals = {
+    ghostty: fs.existsSync(path.join(xdgConfig, 'ghostty')) || fs.existsSync(path.join(appData, 'ghostty')),
+    wezterm: fs.existsSync(path.join(home, '.wezterm.lua')) || fs.existsSync(path.join(xdgConfig, 'wezterm')),
+    kitty: fs.existsSync(path.join(xdgConfig, 'kitty')),
+    alacritty: fs.existsSync(path.join(xdgConfig, 'alacritty')) || fs.existsSync(path.join(appData, 'alacritty')),
+  };
+
   return {
     settingsPath,
     settingsExists: exists,
@@ -699,6 +771,8 @@ function getCliStatus() {
     windowsTerminalPath: wtPaths[0] || null,
     wtProfileInstalled,
     wtHasBackup,
+    ffmpegAvailable: isFfmpegAvailable(),
+    detectedTerminals,
   };
 }
 
@@ -860,6 +934,7 @@ function syncWindowsTerminalProfile(config, appBaseDir = '') {
   if (!parsed.profiles || typeof parsed.profiles !== 'object') parsed.profiles = {};
   if (!Array.isArray(parsed.profiles.list)) parsed.profiles.list = [];
 
+  const resolvedShader = resolvePersistentShaderPath(cli.terminalShader, appBaseDir);
   const pad = Number(cli.terminalPadding ?? 12);
   const sharedStyle = {
     colorScheme: scheme.name,
@@ -873,6 +948,7 @@ function syncWindowsTerminalProfile(config, appBaseDir = '') {
     useAcrylic: Boolean(cli.terminalAcrylic),
     padding: `${pad}, ${Math.round(pad * 1.2)}, ${pad}, ${Math.round(pad * 1.2)}`,
     'experimental.retroTerminalEffect': Boolean(cli.terminalRetroEffect),
+    'experimental.pixelShaderPath': resolvedShader || null,
   };
 
   const resolvedBg = resolveTerminalBgImagePath(cli.terminalBgImage, appBaseDir);
@@ -923,6 +999,7 @@ function syncWindowsTerminalProfile(config, appBaseDir = '') {
       'useAcrylic',
       'padding',
       'experimental.retroTerminalEffect',
+      'experimental.pixelShaderPath',
       'backgroundImage',
       'backgroundImageOpacity',
       'backgroundImageStretchMode',
@@ -1111,9 +1188,186 @@ white = "${p.brightWhite}"`;
   return { palette: p, ghostty, wezterm, kitty, alacritty };
 }
 
+function upsertManagedBlock(filePath, beginMarker, endMarker, body) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const bakPath = `${filePath}.agthemes.bak`;
+  let existing = '';
+  if (fs.existsSync(filePath)) {
+    existing = fs.readFileSync(filePath, 'utf8');
+    if (!fs.existsSync(bakPath)) {
+      try { fs.copyFileSync(filePath, bakPath); } catch (_) {}
+    }
+  }
+  const block = `${beginMarker}\n${body.trim()}\n${endMarker}`;
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`${esc(beginMarker)}[\\s\\S]*?${esc(endMarker)}`, 'm');
+  const next = re.test(existing)
+    ? existing.replace(re, block)
+    : (existing.trimEnd() ? `${existing.trimEnd()}\n\n${block}\n` : `${block}\n`);
+  fs.writeFileSync(filePath, next, 'utf8');
+}
+
+/**
+ * 1-click config sync for Ghostty, WezTerm, Kitty, and Alacritty with automatic .agthemes.bak backup.
+ */
+function syncExternalTerminalConfig(termName, config, baseDirOverride = '') {
+  const safeTerm = String(termName || '').toLowerCase();
+  const snippets = generateTerminalSnippets(config);
+  const home = baseDirOverride || os.homedir();
+  const xdg = baseDirOverride
+    ? path.join(baseDirOverride, '.config')
+    : (process.env.XDG_CONFIG_HOME || path.join(home, '.config'));
+  const appData = baseDirOverride
+    ? path.join(baseDirOverride, 'AppData', 'Roaming')
+    : (process.env.APPDATA || path.join(home, 'AppData', 'Roaming'));
+
+  if (safeTerm === 'ghostty') {
+    const targetDir = process.platform === 'win32' && !baseDirOverride && fs.existsSync(path.join(appData, 'ghostty'))
+      ? path.join(appData, 'ghostty')
+      : path.join(xdg, 'ghostty');
+    const themeFile = path.join(targetDir, 'antigravity-themes.conf');
+    const mainConfig = path.join(targetDir, 'config');
+    fs.mkdirSync(targetDir, { recursive: true });
+    fs.writeFileSync(themeFile, snippets.ghostty + '\n', 'utf8');
+    upsertManagedBlock(
+      mainConfig,
+      '# BEGIN ANTIGRAVITY-THEMES',
+      '# END ANTIGRAVITY-THEMES',
+      `config-file = ?${themeFile.replace(/\\/g, '/')}`
+    );
+    return { ok: true, terminal: 'ghostty', path: mainConfig, themePath: themeFile };
+  }
+
+  if (safeTerm === 'kitty') {
+    const targetDir = path.join(xdg, 'kitty');
+    const themeFile = path.join(targetDir, 'antigravity-themes.conf');
+    const mainConfig = path.join(targetDir, 'kitty.conf');
+    fs.mkdirSync(targetDir, { recursive: true });
+    fs.writeFileSync(themeFile, snippets.kitty + '\n', 'utf8');
+    upsertManagedBlock(
+      mainConfig,
+      '# BEGIN ANTIGRAVITY-THEMES',
+      '# END ANTIGRAVITY-THEMES',
+      'include antigravity-themes.conf'
+    );
+    return { ok: true, terminal: 'kitty', path: mainConfig, themePath: themeFile };
+  }
+
+  if (safeTerm === 'alacritty') {
+    const targetDir = process.platform === 'win32' && !baseDirOverride
+      ? path.join(appData, 'alacritty')
+      : path.join(xdg, 'alacritty');
+    const themeFile = path.join(targetDir, 'antigravity-themes.toml');
+    const mainConfig = path.join(targetDir, 'alacritty.toml');
+    fs.mkdirSync(targetDir, { recursive: true });
+    fs.writeFileSync(themeFile, snippets.alacritty + '\n', 'utf8');
+    if (!fs.existsSync(mainConfig)) {
+      fs.writeFileSync(
+        mainConfig,
+        `# Antigravity Themes import\n[general]\nimport = ["${themeFile.replace(/\\/g, '/')}"]\n`,
+        'utf8'
+      );
+    } else {
+      const bakPath = `${mainConfig}.agthemes.bak`;
+      if (!fs.existsSync(bakPath)) {
+        try { fs.copyFileSync(mainConfig, bakPath); } catch (_) {}
+      }
+      const cur = fs.readFileSync(mainConfig, 'utf8');
+      if (!cur.includes('antigravity-themes.toml')) {
+        const importLine = `import = ["${themeFile.replace(/\\/g, '/')}"]`;
+        const next = /\[general\]/m.test(cur)
+          ? cur.replace(/\[general\]/m, `[general]\n${importLine}`)
+          : `[general]\n${importLine}\n\n${cur}`;
+        fs.writeFileSync(mainConfig, next, 'utf8');
+      }
+    }
+    return { ok: true, terminal: 'alacritty', path: mainConfig, themePath: themeFile };
+  }
+
+  if (safeTerm === 'wezterm') {
+    const targetDir = path.join(xdg, 'wezterm');
+    const themeFile = path.join(targetDir, 'antigravity-themes.lua');
+    fs.mkdirSync(targetDir, { recursive: true });
+    fs.writeFileSync(themeFile, snippets.wezterm + '\n', 'utf8');
+    const mainConfig = path.join(home, '.wezterm.lua');
+    if (!fs.existsSync(mainConfig)) {
+      fs.writeFileSync(mainConfig, snippets.wezterm + '\n', 'utf8');
+      return { ok: true, terminal: 'wezterm', path: mainConfig, themePath: themeFile };
+    }
+    return {
+      ok: true,
+      terminal: 'wezterm',
+      path: themeFile,
+      themePath: themeFile,
+      note: 'Saved standalone module without overwriting your existing ~/.wezterm.lua.',
+    };
+  }
+
+  return { ok: false, error: `Unsupported terminal target: ${termName}` };
+}
+
+function exportCliPresetJson(config) {
+  const cli = config?.cli || {};
+  const palette = buildAnsiPalette(config);
+  const cleanPal = { ...palette };
+  delete cleanPal.name;
+  return JSON.stringify(
+    {
+      schema: 'antigravity-cli-preset/v1',
+      exportedAt: new Date().toISOString(),
+      name: cli.presetId && CLI_THEME_PRESETS[cli.presetId] ? CLI_THEME_PRESETS[cli.presetId].name : 'Custom CLI Preset',
+      cli: {
+        presetId: 'custom',
+        colorScheme: cli.colorScheme || 'terminal',
+        runningLightSpeed: cli.runningLightSpeed || 'medium',
+        altScreenMode: cli.altScreenMode || 'auto',
+        statusLineEnabled: Boolean(cli.statusLineEnabled),
+        statusLinePreset: cli.statusLinePreset || 'powerline',
+        statusLinePadding: Number(cli.statusLinePadding) || 0,
+        statusLineShowModel: cli.statusLineShowModel !== false,
+        statusLineShowFolder: cli.statusLineShowFolder !== false,
+        statusLineShowBranch: cli.statusLineShowBranch !== false,
+        statusLineShowContextBar: cli.statusLineShowContextBar !== false,
+        statusLineShowClock: Boolean(cli.statusLineShowClock),
+        statusLinePrefix: cli.statusLinePrefix ?? '◆',
+        terminalFontFace: cli.terminalFontFace || 'JetBrainsMono Nerd Font',
+        terminalFontSize: Number(cli.terminalFontSize) || 11,
+        terminalPadding: Number(cli.terminalPadding ?? 12),
+        terminalCursorShape: cli.terminalCursorShape || 'bar',
+        terminalOpacity: Number(cli.terminalOpacity) || 88,
+        terminalAcrylic: cli.terminalAcrylic !== false,
+        terminalShader: cli.terminalShader || 'none',
+        customPalette: cleanPal,
+      },
+    },
+    null,
+    2
+  );
+}
+
+function parseCliPresetJson(rawText) {
+  const parsed = JSON.parse(stripJsonc(rawText));
+  if (!parsed || typeof parsed !== 'object') throw new Error('Invalid JSON preset file.');
+  const cliObj = parsed.cli && typeof parsed.cli === 'object' ? parsed.cli : parsed;
+  const paletteObj =
+    cliObj.customPalette && typeof cliObj.customPalette === 'object'
+      ? cliObj.customPalette
+      : (parsed.palette && typeof parsed.palette === 'object' ? parsed.palette : null);
+  const patch = {
+    enabled: true,
+    presetId: paletteObj ? 'custom' : (cliObj.presetId || 'custom'),
+    ...cliObj,
+  };
+  if (paletteObj) patch.customPalette = paletteObj;
+  return { name: parsed.name || 'Imported CLI Preset', cliPatch: patch };
+}
+
 module.exports = {
   CLI_THEME_PRESETS,
+  CLI_SHADER_PRESETS,
   stripJsonc,
+  isFfmpegAvailable,
+  resolvePersistentShaderPath,
   getCliPresetsList,
   getAgyCliSettingsPath,
   resolveTerminalBgImagePath,
@@ -1130,4 +1384,7 @@ module.exports = {
   restoreWindowsTerminalBackup,
   launchStyledCliTerminal,
   generateTerminalSnippets,
+  syncExternalTerminalConfig,
+  exportCliPresetJson,
+  parseCliPresetJson,
 };

@@ -25,12 +25,14 @@ const DEFAULT_CLI_CONFIG = Object.freeze({
   terminalOpacity: 88,
   terminalAcrylic: true,
   terminalRetroEffect: false,
+  terminalShader: 'none', // 'none' | 'subtle-vignette' | 'soft-bloom' | 'crt-scanlines'
   terminalSyncThemeWallpaper: false,
   terminalApplyToDefaultProfile: true,
   terminalBgImage: '',
   terminalBgOpacity: 0.30,
   terminalBgStretch: 'uniformToFill', // 'uniformToFill' | 'uniform' | 'none'
   terminalBgAlignment: 'center', // 'center' | 'right' | 'bottomRight' | 'topRight'
+  customPalette: {},
 });
 
 const DEFAULT_CONFIG = Object.freeze({
@@ -150,9 +152,33 @@ const CLI_ENUMS = {
   altScreenMode: new Set(['auto', 'always', 'never']),
   statusLinePreset: new Set(['minimal', 'powerline', 'compact-mono', 'bordered', 'badges']),
   terminalCursorShape: new Set(['bar', 'filledBox', 'emptyBox', 'underscore', 'vintage']),
+  terminalShader: new Set(['none', 'subtle-vignette', 'soft-bloom', 'crt-scanlines']),
   terminalBgStretch: new Set(['uniformToFill', 'uniform', 'none']),
   terminalBgAlignment: new Set(['center', 'right', 'bottomRight', 'topRight']),
 };
+
+const PALETTE_KEYS = new Set([
+  'background',
+  'foreground',
+  'cursorColor',
+  'selectionBackground',
+  'black',
+  'red',
+  'green',
+  'yellow',
+  'blue',
+  'purple',
+  'cyan',
+  'white',
+  'brightBlack',
+  'brightRed',
+  'brightGreen',
+  'brightYellow',
+  'brightBlue',
+  'brightPurple',
+  'brightCyan',
+  'brightWhite',
+]);
 
 const RANGES = {
   chatFontSize: [12, 18],
@@ -227,6 +253,16 @@ function sanitizeCliPatch(raw) {
       if (typeof v === 'string') out[k] = v.slice(0, 16);
     } else if (k === 'terminalBgImage') {
       if (typeof v === 'string') out[k] = v.trim().slice(0, 512);
+    } else if (k === 'customPalette') {
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        const cleanPal = {};
+        for (const [pk, pv] of Object.entries(v)) {
+          if (PALETTE_KEYS.has(pk) && isValidHex(pv)) {
+            cleanPal[pk] = String(pv).trim().toLowerCase();
+          }
+        }
+        out[k] = cleanPal;
+      }
     }
   }
   return out;
@@ -242,7 +278,13 @@ function sanitizeConfigPatch(rawPatch, currentCli = DEFAULT_CLI_CONFIG) {
 
     if (key === 'cli') {
       const cliPatch = sanitizeCliPatch(val);
-      if (cliPatch) clean.cli = { ...DEFAULT_CLI_CONFIG, ...currentCli, ...cliPatch };
+      if (cliPatch) {
+        const mergedPal =
+          cliPatch.customPalette !== undefined
+            ? { ...(currentCli?.customPalette || {}), ...cliPatch.customPalette }
+            : currentCli?.customPalette || {};
+        clean.cli = { ...DEFAULT_CLI_CONFIG, ...currentCli, ...cliPatch, customPalette: mergedPal };
+      }
     } else if (typeof defVal === 'boolean') {
       clean[key] = Boolean(val);
     } else if (key === 'accentColor') {
