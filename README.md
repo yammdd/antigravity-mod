@@ -12,6 +12,9 @@
   <a href="https://github.com/yammdd/antigravity-mod/actions/workflows/ci.yml">
     <img src="https://github.com/yammdd/antigravity-mod/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
+  <a href="https://github.com/yammdd/antigravity-mod/releases">
+    <img src="https://img.shields.io/github/v/release/yammdd/antigravity-mod?label=release" alt="Latest Release" />
+  </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
   </a>
@@ -22,29 +25,53 @@
 
 Antigravity Themes customizes Google Antigravity across three independent surfaces without patching binaries or `app.asar`:
 
+- **Antigravity CLI (`agy`)** — Standalone terminal presets, custom 16-color ANSI editor, animated GIF / video-to-GIF backgrounds, Windows Terminal HLSL shaders, modular ANSI status bar, and one-click config sync for Windows Terminal, Ghostty, WezTerm, Kitty, and Alacritty.
 - **Antigravity IDE** — Live CSS injection for `.monaco-workbench` and embedded chat over local CDP (`127.0.0.1`).
 - **Antigravity App** — Live styling for `.agy-shell`, sidebar, composer, and modals.
-- **Antigravity CLI (`agy`)** — Standalone terminal presets, animated GIF / wallpaper backgrounds, modular ANSI status bar, and Windows Terminal / Ghostty / WezTerm / Kitty / Alacritty configuration.
+
+## Preview
+
+### Standalone CLI (`agy`) Studio
+<p align="center">
+  <img src="docs/assets/cli-studio.png" alt="Antigravity Themes — Standalone CLI (agy) Studio" width="100%" />
+</p>
+
+### Theme Gallery & Live IDE Preview
+<p align="center">
+  <img src="docs/assets/themes-gallery.png" alt="Antigravity Themes — Themes Gallery & Live Preview" width="100%" />
+</p>
+
+### Guided Multi-Surface Setup
+<p align="center">
+  <img src="docs/assets/guided-setup.png" alt="Antigravity Themes — Multi-Surface Setup" width="100%" />
+</p>
 
 ## Features
 
 | Feature | Antigravity IDE | Antigravity App | Antigravity CLI (`agy`) |
 | :--- | :---: | :---: | :---: |
-| Built-in themes & media | 16 Anime, GIF, Landscape & Video packs + 4 CSS themes | 16 Anime, GIF, Landscape & Video packs + 4 CSS themes | 8 standalone ANSI presets + 8 built-in animated GIFs |
-| Local `.theme.css` hot reload | Yes | Yes | Optional pack sync |
-| Live QuickCSS editor (`Ctrl+S`) | Yes | Yes | — |
-| Online CSS links (`https://`) | Yes | Yes | — |
+| Built-in themes & media | 16 Anime, GIF, Landscape & Video packs + 4 CSS themes | 16 Anime, GIF, Landscape & Video packs + 4 CSS themes | 8 ANSI presets + custom 16-color editor + 8 built-in GIFs |
+| Shareable packs & presets | `.theme.css` & single-file `.agtheme.zip` packs | `.theme.css` & single-file `.agtheme.zip` packs | Portable `.json` CLI preset export/import |
+| Live QuickCSS & online CSS | Yes (`Ctrl+S` + `https://`) | Yes (`Ctrl+S` + `https://`) | — |
 | Custom local fonts (`.woff2`/`.ttf`/`.otf`) | Yes | Yes | Via terminal profile |
-| Image, animated GIF & video backdrops | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` | `.jpg`, `.png`, `.gif` (+ auto video-to-GIF via `ffmpeg`) |
-| Animations & status UI | Sakura, Rain, Stars, Ken Burns, UI motion | Sakura, Rain, Stars, Ken Burns, UI motion | `runningLightSpeed`, `altScreenMode`, modular `statusLine` |
+| Image, animated GIF & video backdrops | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` | `.jpg`, `.png`, `.gif` (+ auto `.mp4`/`.webm` → `.gif`) |
+| Shaders, animations & status UI | Sakura, Rain, Stars, Ken Burns, UI motion | Sakura, Rain, Stars, Ken Burns, UI motion | Windows Terminal HLSL shaders, `runningLightSpeed`, `altScreenMode`, modular `statusLine` |
 
-## Quick Start
+## Installation
 
-### Windows (Portable Executable)
+### Prebuilt Binaries (Windows / macOS / Linux)
 
-1. Download `Antigravity-Themes-<version>.exe` from the [Releases](https://github.com/yammdd/antigravity-mod/releases) page (or build locally with `npm run build:win`).
-2. On first launch, choose the surfaces you want to customize (**Antigravity IDE**, **Antigravity App**, **Antigravity CLI**, or **Select all**).
-3. Click **Install & Open Studio** to open the workspace.
+Download the latest release from [GitHub Releases](https://github.com/yammdd/antigravity-mod/releases):
+
+| Platform | File | Notes |
+| :--- | :--- | :--- |
+| **Windows (x64)** | `Antigravity-Themes-<version>.exe` | Single portable executable (no installer required) |
+| **macOS** | `Antigravity-Themes-<version>.dmg` | Drag to Applications |
+| **Linux (x64)** | `Antigravity-Themes-<version>.AppImage` | `chmod +x` and run |
+
+Each release includes `SHA256SUMS.txt` so you can verify file integrity (`certutil -hashfile Antigravity-Themes-1.1.0.exe SHA256` on Windows or `sha256sum -c SHA256SUMS.txt` on Linux/macOS).
+
+> **Note on unsigned open-source builds**: Prebuilt executables are compiled directly from this repository via GitHub Actions without a paid code-signing certificate, so Windows SmartScreen or macOS Gatekeeper may prompt on first launch. You can verify the checksum against `SHA256SUMS.txt` or build locally from source.
 
 ### Run from Source (Windows / macOS / Linux)
 
@@ -71,11 +98,12 @@ npm run build:win       # Package Windows portable .exe to release/
 You can change active surfaces anytime using **Change targets** in the sidebar.
 
 ### Antigravity CLI (`agy`) — Standalone Studio
-- Works independently of Antigravity IDE and App.
-- Includes 8 curated 16-color terminal palettes (*Tokyo Night*, *Catppuccin Mocha*, *Rose Pine*, *Nord Frost*, *Gruvbox Dark*, *Cyberpunk Cyan*, *Dracula*, *GitHub Light*), a live `agy` terminal preview, 8 built-in animated GIFs, and automatic short `.mp4`/`.webm` → `.gif` conversion when `ffmpeg` is installed.
-- Configures `~/.gemini/antigravity-cli/settings.json` (`colorScheme`, `runningLightSpeed`, `altScreenMode`, and modular Node.js `statusLine` with a built-in self-test button).
-- Syncs Windows Terminal (`Antigravity CLI` profile and optional default profile) using JSONC-safe parsing with automatic `.agthemes.bak` backup and one-click restore.
-- Exports ready-to-paste snippets for **Ghostty**, **WezTerm**, **Kitty**, and **Alacritty**.
+- Works completely independently of Antigravity IDE and App.
+- Includes 8 curated 16-color terminal palettes (*Tokyo Night*, *Catppuccin Mocha*, *Rose Pine*, *Nord Frost*, *Gruvbox Dark*, *Cyberpunk Cyan*, *Dracula*, *GitHub Light*), an interactive 16-color **Customize ANSI** editor, and JSON preset import/export.
+- Ships with 8 built-in animated GIFs and automatic short `.mp4`/`.webm` → `.gif` conversion when `ffmpeg` is installed (`winget install Gyan.FFmpeg` / `brew install ffmpeg`).
+- Configures `~/.gemini/antigravity-cli/settings.json` (`colorScheme`, `runningLightSpeed`, `altScreenMode`, and modular Node.js `statusLine` with a built-in live self-test).
+- Syncs Windows Terminal (`Antigravity CLI` profile, optional default profile, and 3 built-in HLSL pixel shaders: *Subtle Vignette*, *Soft Bloom*, *CRT Scanlines*) with JSONC-safe parsing and automatic `.agthemes.bak` backup/restore.
+- One-click **Write Config** (with `.agthemes.bak` backup) and copyable snippets for **Ghostty**, **WezTerm**, **Kitty**, and **Alacritty**.
 
 ### Antigravity IDE
 - Setup adds `"remote-debugging-port": "0"` to `~/.antigravity-ide/argv.json`.
@@ -88,10 +116,10 @@ You can change active surfaces anytime using **Change targets** in the sidebar.
 
 ```text
 ├── build/                 # Packaging icons (icon.ico, icon.png)
-├── docs/                  # Theme authoring documentation
+├── docs/                  # Theme authoring guide and preview screenshots
 ├── electron/
-│   ├── assets/            # App, taskbar, and tray icons
-│   ├── core/              # Store, CDP bridge, media server, theme manager, CLI engine
+│   ├── assets/            # App/tray icons and Windows Terminal HLSL shaders
+│   ├── core/              # Store, CDP bridge, media server, theme manager, ZIP pack, updater, CLI engine
 │   ├── injector/          # CSS compiler and CSP-safe runtime DOM injector
 │   ├── main/              # Electron main process, IPC handlers, IDE & OS integration
 │   └── preload/           # Sandboxed contextBridge API
@@ -102,7 +130,7 @@ You can change active surfaces anytime using **Change targets** in the sidebar.
 
 ## Documentation & Policies
 
-- [Theme Authoring Guide](docs/THEME_AUTHORING.md) — Creating `.theme.css` files and multi-surface Theme Packs
+- [Theme Authoring Guide](docs/THEME_AUTHORING.md) — Creating `.theme.css` files and shareable `.agtheme.zip` Theme Packs
 - [Contributing](CONTRIBUTING.md) — Development setup, PR checklist, and commit guidelines
 - [Security Policy](SECURITY.md) — Sandbox model, loopback CDP, and vulnerability reporting
 - [Changelog](CHANGELOG.md) — Release history

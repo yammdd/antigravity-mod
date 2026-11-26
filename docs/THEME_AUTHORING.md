@@ -96,6 +96,10 @@ themes/my-pack/
 - **Windows Terminal (`agy` CLI) backdrops**: `.jpg`, `.png`, and animated `.gif` (set via `cliBackdrop` when the main `backdrop.file` is a `.webm` video).
 - **IDE `tabsStyle`**: `"default"` (stock tabs), `"underline"`, or `"minimal"` (top line).
 
+### Sharing as a Single `.agtheme.zip` File
+
+You can package any Theme Pack folder into a single `.zip` archive (either via the **Export `.zip`** button on any pack card in **Themes**, or by zipping the pack directory so `theme.json` is at the archive root or inside one top-level folder). Recipients can import `.zip` packs via **Themes -> Import .zip** or by dragging and dropping the `.zip` file onto the Antigravity Themes window.
+
 ### Local Assets in CSS
 
 Relative `url("./assets/...")` paths inside `shared.css`, `ide.css`, or `app.css` are served through the local media server and converted to `blob:` URLs where required by CSP.

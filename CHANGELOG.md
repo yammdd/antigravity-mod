@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-11-26
+
+### Added
+- **Windows Terminal HLSL pixel shaders**: Bundled 3 lightweight shaders (*Subtle Vignette*, *Soft Bloom*, *CRT Scanlines*) copied to persistent app data so Windows Terminal keeps valid shader paths even with portable `.exe` builds.
+- **Custom 16-color ANSI palette editor & JSON presets**: Fork any built-in CLI palette with live color swatches and export/import portable `agy` CLI preset `.json` files.
+- **1-click external terminal config sync**: Write managed theme configurations (with automatic `.agthemes.bak` backup) directly for **Ghostty**, **WezTerm**, **Kitty**, and **Alacritty** alongside copyable snippets.
+- **Shareable `.zip` Theme Packs**: Zero-dependency ZIP exporter and zip-slip-safe importer (`Import .zip` button, per-pack export button, and drag-and-drop support).
+- **GitHub Releases update checker**: Check installed vs. latest release version from **Settings** with a direct link to the release page.
+- **Multi-platform Release CI**: Automated builds for Windows (`.exe`), macOS (`.dmg`), and Linux (`.AppImage`) with generated `SHA256SUMS.txt`.
+- **README visual showcase**: Added desktop studio screenshots (`CLI Studio`, `Themes Gallery`, `Guided Setup`) and `ffmpeg` installation hint in CLI Studio when absent.
+
 ## [1.0.0] - 2026-11-26
 
 ### Added
