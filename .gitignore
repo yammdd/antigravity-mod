@@ -1,0 +1,12 @@
+node_modules/
+dist-ui/
+dist/
+release/
+coverage/
+*.log
+*.tmp
+*.bak
+.env
+.env.*
+.DS_Store
+Thumbs.db

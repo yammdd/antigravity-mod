@@ -1,0 +1,100 @@
+{
+  "name": "antigravity-themes",
+  "version": "1.0.0",
+  "description": "UI theme manager, QuickCSS editor, and standalone CLI studio for Google Antigravity IDE, App, and agy CLI",
+  "author": "Thanh-Dan Bui",
+  "license": "MIT",
+  "homepage": "https://github.com/yammdd/antigravity-mod#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yammdd/antigravity-mod.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yammdd/antigravity-mod/issues"
+  },
+  "keywords": [
+    "antigravity",
+    "antigravity-ide",
+    "antigravity-cli",
+    "agy",
+    "themes",
+    "quickcss",
+    "windows-terminal",
+    "electron"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "main": "electron/main/index.cjs",
+  "scripts": {
+    "dev:ui": "vite",
+    "build:ui": "vite build",
+    "start": "electron .",
+    "dev": "concurrently -k \"npm run dev:ui\" \"wait-on http://127.0.0.1:5179 && cross-env VITE_DEV_URL=http://127.0.0.1:5179 electron .\"",
+    "test": "node scripts/check-electron.cjs",
+    "check:electron": "node scripts/check-electron.cjs",
+    "build": "npm run build:ui && electron-builder",
+    "build:win": "npm run build:ui && electron-builder --win"
+  },
+  "dependencies": {
+    "lucide-react": "^0.469.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^6.0.0",
+    "wait-on": "^8.0.2"
+  },
+  "build": {
+    "appId": "dev.antigravity.themes",
+    "productName": "Antigravity Themes",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-ui/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "themes",
+        "to": "themes"
+      },
+      {
+        "from": "electron/assets",
+        "to": "assets"
+      }
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "Antigravity-Themes-${version}.exe"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
+}
