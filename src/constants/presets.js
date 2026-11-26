@@ -1,0 +1,179 @@
+export const ACCENT_SWATCHES = [
+  { name: 'Cobalt', hex: '#3b82f6' },
+  { name: 'Sakura', hex: '#f472b6' },
+  { name: 'Sky', hex: '#38bdf8' },
+  { name: 'Teal', hex: '#14b8a6' },
+  { name: 'Emerald', hex: '#22c55e' },
+  { name: 'Amber', hex: '#f59e0b' },
+  { name: 'Coral', hex: '#f97316' },
+  { name: 'Rose', hex: '#e11d48' },
+];
+
+export const UI_FONTS = [
+  { id: 'inter', label: 'Inter' },
+  { id: 'geist', label: 'Geist' },
+  { id: 'be_vietnam', label: 'Be Vietnam Pro' },
+  { id: 'ibm_plex', label: 'IBM Plex Sans' },
+  { id: 'system', label: 'System UI' },
+];
+
+export const MONO_FONTS = [
+  { id: 'jetbrains', label: 'JetBrains Mono' },
+  { id: 'cascadia', label: 'Cascadia Code' },
+  { id: 'ibm_mono', label: 'IBM Plex Mono' },
+  { id: 'system', label: 'System Monospace' },
+];
+
+export const ANIMATION_PRESETS = [
+  {
+    id: 'none',
+    label: 'None',
+    desc: 'Static clean background',
+    badge: 'OFF',
+  },
+  {
+    id: 'sakura',
+    label: 'Sakura Petals',
+    desc: 'Soft pink cherry blossom petals drifting gently',
+    badge: 'LIVE',
+  },
+  {
+    id: 'rain',
+    label: 'Midnight Rain',
+    desc: 'Delicate angled raindrop streaks for rainy scenes',
+    badge: 'LIVE',
+  },
+  {
+    id: 'stars',
+    label: 'Starlight Drift',
+    desc: 'Calm floating starlight and firefly glints',
+    badge: 'LIVE',
+  },
+  {
+    id: 'ken-burns',
+    label: 'Living Pan',
+    desc: 'Slow zoom & drift that brings static images to life',
+    badge: 'MOTION',
+  },
+  {
+    id: 'tab-slide',
+    label: 'Smooth UI',
+    desc: 'Subtle fade-rise on agent replies and tabs',
+    badge: 'UI',
+  },
+  {
+    id: 'aurora-edge',
+    label: 'Titlebar Glide',
+    desc: 'Thin accent light sweep under the titlebar',
+    badge: 'UI',
+  },
+  {
+    id: 'cursor-pulse',
+    label: 'Focus Ring',
+    desc: 'Gentle accent pulse on active chat box',
+    badge: 'UI',
+  },
+  {
+    id: 'ambient-shift',
+    label: 'Ambient Glow',
+    desc: 'Slow 16s brightness breathing on active backdrop',
+    badge: 'MOTION',
+  },
+];
+
+export const CLI_COLOR_SCHEMES = [
+  { id: 'terminal', label: 'Terminal (inherit custom ANSI palette)' },
+  { id: 'tokyo night', label: 'Tokyo Night' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'solarized dark', label: 'Solarized Dark' },
+  { id: 'colorblind-friendly dark', label: 'Colorblind-friendly Dark' },
+  { id: 'light', label: 'Light' },
+  { id: 'solarized light', label: 'Solarized Light' },
+  { id: 'colorblind-friendly light', label: 'Colorblind-friendly Light' },
+];
+
+export const CLI_SPINNER_SPEEDS = [
+  { id: 'fast', label: 'Fast' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'slow', label: 'Slow' },
+  { id: 'off', label: 'Off' },
+];
+
+export const CLI_STATUSLINE_PRESETS = [
+  { id: 'powerline', label: 'Powerline blocks' },
+  { id: 'badges', label: 'Bracketed badges' },
+  { id: 'bordered', label: 'Bracketed segments' },
+  { id: 'compact-mono', label: 'Compact monospace' },
+  { id: 'minimal', label: 'Minimal dot-separated' },
+];
+
+export const CLI_ALT_SCREEN_MODES = [
+  { id: 'auto', label: 'Auto' },
+  { id: 'always', label: 'Always' },
+  { id: 'never', label: 'Never' },
+];
+
+export const CLI_CURSOR_SHAPES = [
+  { id: 'bar', label: 'Bar |' },
+  { id: 'filledBox', label: 'Block' },
+  { id: 'emptyBox', label: 'Outline' },
+  { id: 'underscore', label: 'Line _' },
+];
+
+export const CLI_BG_STRETCH_MODES = [
+  { id: 'uniformToFill', label: 'Fill' },
+  { id: 'uniform', label: 'Fit' },
+  { id: 'none', label: 'Original' },
+];
+
+export const CLI_BG_ALIGNMENTS = [
+  { id: 'center', label: 'Center' },
+  { id: 'right', label: 'Right' },
+  { id: 'bottomRight', label: 'Bottom Right' },
+  { id: 'topRight', label: 'Top Right' },
+];
+
+export const CLI_FONT_SUGGESTIONS = [
+  'JetBrainsMono Nerd Font',
+  'Cascadia Code',
+  'Cascadia Mono',
+  'Consolas',
+];
+
+export const CLI_PREFIX_SYMBOLS = ['◆', '▲', '›', '●', ''];
+
+export const CSS_TOKEN_REFERENCE = [
+  { token: '--ag-accent', sample: '--ag-accent: #3b82f6;', desc: 'Primary accent color' },
+  { token: '--ag-surface-rgb', sample: '--ag-surface-rgb: 20, 20, 21;', desc: 'Base RGB surface tint' },
+  { token: '--ag-sidebar-bg', sample: '--ag-sidebar-bg: rgba(20, 20, 21, 0.58);', desc: 'Sidebar and tab bar fill' },
+  { token: '--ag-editor-bg', sample: '--ag-editor-bg: rgba(20, 20, 21, 0.66);', desc: 'IDE editor surface fill' },
+  { token: '--ag-chat-bg', sample: '--ag-chat-bg: rgba(20, 20, 21, 0.60);', desc: 'App and chat surface fill' },
+  { token: '--ag-border', sample: '--ag-border: rgba(237, 237, 237, 0.09);', desc: 'Divider color' },
+  { token: '--ag-radius', sample: '--ag-radius: 10px;', desc: 'Global corner radius' },
+  { token: '--ag-font-ui', sample: "--ag-font-ui: 'Inter', sans-serif;", desc: 'Interface font stack' },
+  { token: '--ag-font-mono', sample: "--ag-font-mono: 'JetBrains Mono', monospace;", desc: 'Code editor font stack' },
+  { token: '--ag-chat-font-size', sample: '--ag-chat-font-size: 14px;', desc: 'Chat body font size' },
+];
+
+export const SELECTOR_SNIPPETS = [
+  {
+    label: 'IDE Workbench Titlebar',
+    snippet: `.monaco-workbench .part.titlebar {\n  /* Customize IDE titlebar */\n}\n`,
+  },
+  {
+    label: 'IDE Active Editor Tab',
+    snippet: `.monaco-workbench .part.editor .tab.active {\n  border-bottom: 2px solid var(--ag-accent) !important;\n}\n`,
+  },
+  {
+    label: 'App & Chat Agent Response',
+    snippet: `.agy-shell [data-testid="agent-response"] {\n  line-height: 1.7 !important;\n}\n`,
+  },
+  {
+    label: 'App Side Panel',
+    snippet: `.agy-shell [data-side-panel-body="true"] {\n  background: var(--ag-sidebar-bg) !important;\n}\n`,
+  },
+  {
+    label: 'Chat Composer Card',
+    snippet: `.surface-composer-card {\n  border: 1px solid var(--ag-border) !important;\n}\n`,
+  },
+];
