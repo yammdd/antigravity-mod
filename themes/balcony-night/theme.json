@@ -1,0 +1,35 @@
+{
+  "name": "Midnight Balcony",
+  "author": "Wallhaven Community",
+  "version": "1.0.0",
+  "category": "anime",
+  "source": "https://wallhaven.cc/w/gjyoq7",
+  "description": "Atmospheric night balcony anime illustration with deep indigo shadows and cobalt accents.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/backdrop.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.jpg"
+  },
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "ink",
+    "accentColor": "#3b82f6",
+    "animationPreset": "stars",
+    "dimming": 22,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 56,
+    "editorOpacity": 64,
+    "chatOpacity": 58,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "colorScheme": "tokyo night",
+    "runningLightSpeed": "medium",
+    "statusLinePreset": "powerline"
+  }
+}

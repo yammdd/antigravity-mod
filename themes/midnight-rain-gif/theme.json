@@ -1,0 +1,37 @@
+{
+  "name": "Midnight Rain Room",
+  "author": "Lofi Pixel Art Collection",
+  "version": "1.0.0",
+  "category": "gif",
+  "source": "https://github.com/nixonsu/lofi-lounge",
+  "description": "Cozy midnight anime bedroom with steady rain outside the balcony window and warm lamp glow.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/poster.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.gif"
+  },
+  "cliBackdrop": "./assets/backdrop.gif",
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "ink",
+    "accentColor": "#cba6f7",
+    "animationPreset": "none",
+    "dimming": 22,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 56,
+    "editorOpacity": 64,
+    "chatOpacity": 58,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "presetId": "catppuccin-mocha",
+    "colorScheme": "terminal",
+    "runningLightSpeed": "slow",
+    "statusLinePreset": "powerline"
+  }
+}

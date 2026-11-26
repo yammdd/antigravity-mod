@@ -1,0 +1,35 @@
+{
+  "name": "Monochrome Fuji (Light)",
+  "author": "Wallhaven Photography",
+  "version": "1.0.0",
+  "category": "landscape",
+  "source": "https://wallhaven.cc/w/8g5p52",
+  "description": "Clean monochrome fine-art photograph of snowy Mount Fuji built for light-mode clarity.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/backdrop.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.jpg"
+  },
+  "preset": {
+    "colorMode": "light",
+    "surfaceTint": "graphite",
+    "accentColor": "#2563eb",
+    "animationPreset": "none",
+    "dimming": 22,
+    "wallpaperBlur": 2,
+    "sidebarOpacity": 74,
+    "editorOpacity": 80,
+    "chatOpacity": 76,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "colorScheme": "light",
+    "runningLightSpeed": "medium",
+    "statusLinePreset": "minimal"
+  }
+}

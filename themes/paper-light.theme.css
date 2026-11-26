@@ -1,0 +1,13 @@
+/**
+ * @name Paper Light
+ * @author Antigravity Themes
+ * @version 1.0.0
+ * @description Warm daytime editorial light theme with crisp dark ink text and subtle borders.
+ * @colorMode light
+ * @surfaceTint warm
+ * @accent #2563eb
+ */
+
+.agy-shell .surface-composer-card {
+  border: 1px solid var(--ag-border) !important;
+}

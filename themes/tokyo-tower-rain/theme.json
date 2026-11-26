@@ -1,0 +1,35 @@
+{
+  "name": "Tokyo Tower Rain",
+  "author": "Wallhaven Community",
+  "version": "1.0.0",
+  "category": "landscape",
+  "source": "https://wallhaven.cc/w/wq37kp",
+  "description": "Candlelit room overlooking rainy Tokyo Tower at night with warm amber accents.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/backdrop.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.jpg"
+  },
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "warm",
+    "accentColor": "#f59e0b",
+    "animationPreset": "rain",
+    "dimming": 26,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 58,
+    "editorOpacity": 66,
+    "chatOpacity": 60,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "colorScheme": "terminal",
+    "runningLightSpeed": "slow",
+    "statusLinePreset": "bordered"
+  }
+}

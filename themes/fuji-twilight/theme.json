@@ -1,0 +1,35 @@
+{
+  "name": "Mount Fuji Dusk",
+  "author": "Wallhaven Photography",
+  "version": "1.0.0",
+  "category": "landscape",
+  "source": "https://wallhaven.cc/w/1k6ljv",
+  "description": "Real twilight photograph of Mount Fuji rising over a quiet Japanese corner street.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/backdrop.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.jpg"
+  },
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "ink",
+    "accentColor": "#3b82f6",
+    "animationPreset": "none",
+    "dimming": 24,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 58,
+    "editorOpacity": 66,
+    "chatOpacity": 60,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "colorScheme": "terminal",
+    "runningLightSpeed": "medium",
+    "statusLinePreset": "bordered"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "Cyberpunk Rain Room",
+  "author": "Community Live Wallpapers",
+  "version": "1.0.0",
+  "category": "video",
+  "source": "https://github.com/usman-369/wallpapers",
+  "description": "Animated looping video looking out over a rainy neon skyline from a dark quiet cabin.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/poster.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.webm"
+  },
+  "cliBackdrop": "./assets/terminal.gif",
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "ink",
+    "accentColor": "#14b8a6",
+    "animationPreset": "none",
+    "dimming": 20,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 56,
+    "editorOpacity": 64,
+    "chatOpacity": 58,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "colorScheme": "tokyo night",
+    "runningLightSpeed": "slow",
+    "statusLinePreset": "powerline"
+  }
+}

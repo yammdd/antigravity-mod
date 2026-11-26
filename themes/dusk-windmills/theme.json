@@ -1,0 +1,35 @@
+{
+  "name": "Crimson Dusk",
+  "author": "Wallhaven Community",
+  "version": "1.0.0",
+  "category": "anime",
+  "source": "https://wallhaven.cc/w/l83k62",
+  "description": "Painted pink twilight clouds over calm water and windmills with gentle living pan motion.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/backdrop.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.jpg"
+  },
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "ink",
+    "accentColor": "#f472b6",
+    "animationPreset": "ken-burns",
+    "dimming": 24,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 56,
+    "editorOpacity": 64,
+    "chatOpacity": 58,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "colorScheme": "terminal",
+    "runningLightSpeed": "medium",
+    "statusLinePreset": "powerline"
+  }
+}

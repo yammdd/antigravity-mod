@@ -1,0 +1,37 @@
+{
+  "name": "Sakura Pagoda Loop",
+  "author": "Lofi Pixel Art Collection",
+  "version": "1.0.0",
+  "category": "gif",
+  "source": "https://github.com/nixonsu/lofi-lounge",
+  "description": "Animated pixel-art shoji window overlooking Japanese pagodas, cherry blossoms, and warm sunset water.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/poster.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.gif"
+  },
+  "cliBackdrop": "./assets/backdrop.gif",
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "warm",
+    "accentColor": "#f472b6",
+    "animationPreset": "none",
+    "dimming": 22,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 58,
+    "editorOpacity": 66,
+    "chatOpacity": 60,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "presetId": "rose-pine",
+    "colorScheme": "terminal",
+    "runningLightSpeed": "slow",
+    "statusLinePreset": "powerline"
+  }
+}

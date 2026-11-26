@@ -1,0 +1,12 @@
+/* Carbon Studio — Antigravity App 2.0 (.agy-shell & Auxiliary Pane) */
+.agy-shell [data-side-panel-body="true"] {
+  border-left: 1px solid var(--ag-border) !important;
+}
+
+.agy-shell .surface-composer-card {
+  border: 1px solid var(--ag-border) !important;
+}
+
+.agy-shell .surface-composer:focus-within .surface-composer-card {
+  border-color: rgba(59, 130, 246, 0.48) !important;
+}

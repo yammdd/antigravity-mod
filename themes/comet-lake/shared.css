@@ -1,0 +1,4 @@
+/* Shared theme rules using --ag-* tokens */
+.agy-shell .surface-composer:focus-within .surface-composer-card {
+  border-color: rgba(var(--ag-accent-rgb), 0.5) !important;
+}

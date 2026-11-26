@@ -1,0 +1,36 @@
+{
+  "name": "Pastel Aura",
+  "author": "Community Live Wallpapers",
+  "version": "1.0.0",
+  "category": "video",
+  "source": "https://github.com/adiambassador/wallpapers",
+  "description": "Smooth animated pastel anime character live wallpaper with sky blue highlights.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/poster.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.webm"
+  },
+  "cliBackdrop": "./assets/terminal.gif",
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "ink",
+    "accentColor": "#38bdf8",
+    "animationPreset": "none",
+    "dimming": 32,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 60,
+    "editorOpacity": 68,
+    "chatOpacity": 62,
+    "tabsStyle": "default",
+    "cornerRadius": 12
+  },
+  "cli": {
+    "colorScheme": "tokyo night",
+    "runningLightSpeed": "medium",
+    "statusLinePreset": "powerline"
+  }
+}

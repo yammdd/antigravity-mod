@@ -1,0 +1,13 @@
+/**
+ * @name Nordic Slate
+ * @author Antigravity Themes
+ * @version 1.0.0
+ * @description Muted arctic slate surfaces with frost teal highlights for long sessions.
+ * @colorMode dark
+ * @surfaceTint ink
+ * @accent #14b8a6
+ */
+
+.agy-shell [data-testid="agent-response"] a {
+  color: var(--ag-accent) !important;
+}

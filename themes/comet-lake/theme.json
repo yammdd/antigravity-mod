@@ -1,0 +1,35 @@
+{
+  "name": "Starfall Lake",
+  "author": "Wallhaven Community",
+  "version": "1.0.0",
+  "category": "anime",
+  "source": "https://wallhaven.cc/w/2y89my",
+  "description": "Comet streaking across a clear dusk sky over a quiet lakeside town.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/backdrop.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.jpg"
+  },
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "ink",
+    "accentColor": "#38bdf8",
+    "animationPreset": "stars",
+    "dimming": 22,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 56,
+    "editorOpacity": 64,
+    "chatOpacity": 58,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "colorScheme": "tokyo night",
+    "runningLightSpeed": "medium",
+    "statusLinePreset": "powerline"
+  }
+}

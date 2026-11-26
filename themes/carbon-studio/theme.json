@@ -1,0 +1,31 @@
+{
+  "name": "Carbon Studio",
+  "author": "Antigravity Themes",
+  "version": "1.0.0",
+  "description": "Unified 3-surface Theme Pack for Antigravity IDE, Antigravity App 2.0, and agy CLI.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "animation": {
+    "preset": "tab-slide"
+  },
+  "cli": {
+    "colorScheme": "terminal",
+    "runningLightSpeed": "fast",
+    "statusLinePreset": "powerline",
+    "statusLineScript": "./cli/statusline.cjs",
+    "terminalFontFace": "JetBrainsMono Nerd Font"
+  },
+  "category": "minimal",
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "graphite",
+    "accentColor": "#3b82f6",
+    "animationPreset": "tab-slide",
+    "wallpaperEnabled": false,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  }
+}

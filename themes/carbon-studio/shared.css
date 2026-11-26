@@ -1,0 +1,4 @@
+/* Carbon Studio — shared refinements using --ag-* tokens */
+.agy-shell .surface-composer-card {
+  border: 1px solid var(--ag-border) !important;
+}

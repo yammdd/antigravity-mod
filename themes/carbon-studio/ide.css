@@ -1,0 +1,4 @@
+/* Carbon Studio — IDE refinements using --ag-* tokens */
+.monaco-workbench .part.activitybar .action-item.checked .active-item-indicator::before {
+  border-left-color: var(--ag-accent) !important;
+}

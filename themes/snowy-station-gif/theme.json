@@ -1,0 +1,37 @@
+{
+  "name": "Snowy Station Loop",
+  "author": "Lofi Pixel Art Collection",
+  "version": "1.0.0",
+  "category": "gif",
+  "source": "https://github.com/nixonsu/lofi-lounge",
+  "description": "Crisp 1080p pixel-art winter train station with gentle drifting snowfall for IDE, App, and agy CLI.",
+  "targets": [
+    "ide",
+    "app",
+    "cli"
+  ],
+  "preview": "./assets/poster.jpg",
+  "backdrop": {
+    "file": "./assets/backdrop.gif"
+  },
+  "cliBackdrop": "./assets/backdrop.gif",
+  "preset": {
+    "colorMode": "dark",
+    "surfaceTint": "ink",
+    "accentColor": "#38bdf8",
+    "animationPreset": "none",
+    "dimming": 28,
+    "wallpaperBlur": 0,
+    "sidebarOpacity": 60,
+    "editorOpacity": 68,
+    "chatOpacity": 62,
+    "tabsStyle": "default",
+    "cornerRadius": 10
+  },
+  "cli": {
+    "presetId": "nord-frost",
+    "colorScheme": "terminal",
+    "runningLightSpeed": "slow",
+    "statusLinePreset": "powerline"
+  }
+}
