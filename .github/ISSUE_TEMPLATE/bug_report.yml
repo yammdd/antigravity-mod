@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a visual glitch, CLI sync issue, or unexpected crash
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: checkboxes
+    id: surfaces
+    attributes:
+      label: Affected Surface(s)
+      options:
+        - label: Antigravity IDE
+        - label: Antigravity App
+        - label: Antigravity CLI (agy)
+        - label: Antigravity Themes Desktop Studio
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS version, terminal emulator (e.g., Windows Terminal, Ghostty), and app version
+      placeholder: "Windows 11, Windows Terminal 1.22, Antigravity Themes v1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the bug and what you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Antigravity Themes
+        2. Go to ...
+        3. Click ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Attach screenshots or relevant error messages if available

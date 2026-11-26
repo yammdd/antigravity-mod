@@ -1,0 +1,27 @@
+name: Theme submission or feature request
+description: Share a new theme pack or suggest an improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: Type
+      options:
+        - Feature / UI improvement
+        - CLI (agy) enhancement
+        - New Theme Pack / .theme.css submission
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Description
+      description: Describe the requested change or the theme pack you want to share
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional context or links
+      description: Screenshots, source links, or CSS snippets (if applicable)
