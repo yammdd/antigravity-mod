@@ -2,7 +2,9 @@
 
 const EventEmitter = require('events');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { createZipFromDir, extractZipSafe } = require('./zip-pack.cjs');
 
 const MAX_ONLINE_CSS_BYTES = 512 * 1024;
 const ONLINE_FETCH_TIMEOUT_MS = 8000;
@@ -579,6 +581,33 @@ class ThemeManager extends EventEmitter {
         imported.push({ id: `pack:${destSlug}`, kind: 'pack', name: destSlug });
       } else if (stat.isFile()) {
         const lower = absPath.toLowerCase();
+        if (lower.endsWith('.zip')) {
+          const tmpExtract = fs.mkdtempSync(path.join(os.tmpdir(), 'ag-pack-zip-'));
+          try {
+            extractZipSafe(absPath, tmpExtract);
+            const manifestPath = path.join(tmpExtract, 'theme.json');
+            if (!fs.existsSync(manifestPath)) continue;
+            let slug = slugify(path.basename(absPath, '.zip').replace(/\.agtheme$/i, ''));
+            try {
+              const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8').replace(/^\uFEFF/, ''));
+              if (manifest?.name) slug = slugify(manifest.name);
+            } catch (_) {}
+
+            let destSlug = slug;
+            let counter = 2;
+            while (fs.existsSync(path.join(this.themesDir, destSlug))) {
+              destSlug = `${slug}-${counter}`;
+              counter++;
+            }
+            copyDirRecursive(tmpExtract, path.join(this.themesDir, destSlug), true);
+            imported.push({ id: `pack:${destSlug}`, kind: 'pack', name: destSlug });
+          } catch (_) {
+            // Skip invalid/unsafe zip silently or let caller report 0 added
+          } finally {
+            try { fs.rmSync(tmpExtract, { recursive: true, force: true }); } catch (_) {}
+          }
+          continue;
+        }
         if (!lower.endsWith('.css')) continue;
         const base = path.basename(absPath);
         const normalized = base.toLowerCase().endsWith('.theme.css')
@@ -603,6 +632,17 @@ class ThemeManager extends EventEmitter {
       }
     }
     return imported;
+  }
+
+  exportPackZip(themeId, outZipPath) {
+    const id = String(themeId || '').trim();
+    if (!id.startsWith('pack:')) throw new Error('Only Theme Packs can be exported as ZIP.');
+    const folder = path.basename(id.slice(5));
+    const packDir = path.join(this.themesDir, folder);
+    if (!fs.existsSync(path.join(packDir, 'theme.json'))) {
+      throw new Error('Theme Pack folder or theme.json not found.');
+    }
+    return createZipFromDir(packDir, outZipPath);
   }
 
   getQuickCss() {

@@ -1,9 +1,11 @@
 'use strict';
 
-const { dialog, ipcMain, shell } = require('electron');
+const { app, dialog, ipcMain, shell } = require('electron');
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 const { buildExportThemeCss } = require('../injector/css-compiler.cjs');
+const { checkForUpdates } = require('../core/updater.cjs');
 const {
   getArgvStatus,
   configureIdeArgvCdp,
@@ -13,6 +15,7 @@ const {
 } = require('./ide-integration.cjs');
 const {
   CLI_THEME_PRESETS,
+  CLI_SHADER_PRESETS,
   getCliPresetsList,
   resolveTerminalBgImagePath,
   getCliStatus,
@@ -23,6 +26,9 @@ const {
   restoreWindowsTerminalBackup,
   launchStyledCliTerminal,
   generateTerminalSnippets,
+  syncExternalTerminalConfig,
+  exportCliPresetJson,
+  parseCliPresetJson,
 } = require('../core/cli-themer.cjs');
 const { setLoginAutoStart } = require('./autostart.cjs');
 
@@ -47,6 +53,7 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
   };
 
   const getFullState = () => ({
+    appVersion: typeof app?.getVersion === 'function' ? app.getVersion() : '1.1.0',
     config: store.config,
     themes: themeManager.listLocalThemes(),
     builtInWallpapers: themeManager.listBuiltInWallpapers(),
@@ -61,6 +68,7 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     executables: findExecutables(),
     cliStatus: getCliStatus(),
     cliPresets: getCliPresetsList(),
+    cliShaders: CLI_SHADER_PRESETS,
     cliBgMediaUrl: getCliBgMediaUrl(),
     terminalSnippets: generateTerminalSnippets(store.config),
   });
@@ -307,13 +315,49 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     if (res.canceled || !res.filePaths.length) return { added: 0, state: getFullState() };
     const imported = themeManager.importThemeItems(res.filePaths);
     if (!imported.length) {
-      return { added: 0, error: 'Selected folder does not contain a theme.json manifest.', state: getFullState() };
+      return { added: 0, error: 'Selected ZIP or folder does not contain a valid theme.json manifest.', state: getFullState() };
     }
     const list = new Set(store.config.enabledThemes || []);
     for (const item of imported) list.add(item.id);
     store.saveConfig({ enabledThemes: [...list], enabled: true });
     await applyCurrentState();
     return { added: imported.length, items: imported, state: getFullState() };
+  });
+
+  ipcMain.handle('theme:import-pack-zip', async () => {
+    const win = getMainWindow();
+    const res = await dialog.showOpenDialog(win, {
+      title: 'Import Theme Pack (.zip)',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Theme Pack Archive (.zip)', extensions: ['zip'] }],
+    });
+    if (res.canceled || !res.filePaths.length) return { added: 0, state: getFullState() };
+    const imported = themeManager.importThemeItems(res.filePaths);
+    if (!imported.length) {
+      return { added: 0, error: 'Selected ZIP does not contain a valid theme.json manifest.', state: getFullState() };
+    }
+    const list = new Set(store.config.enabledThemes || []);
+    for (const item of imported) list.add(item.id);
+    store.saveConfig({ enabledThemes: [...list], enabled: true });
+    await applyCurrentState();
+    return { added: imported.length, items: imported, state: getFullState() };
+  });
+
+  ipcMain.handle('theme:export-pack-zip', async (_ev, themeId) => {
+    const win = getMainWindow();
+    const slug = String(themeId || 'theme-pack').replace(/^pack:/, '').replace(/[^a-z0-9-_]/gi, '-');
+    const res = await dialog.showSaveDialog(win, {
+      title: 'Export shareable Theme Pack (.zip)',
+      defaultPath: `${slug}.agtheme.zip`,
+      filters: [{ name: 'Theme Pack Archive', extensions: ['zip'] }],
+    });
+    if (res.canceled || !res.filePath) return { ok: false };
+    try {
+      const out = themeManager.exportPackZip(themeId, res.filePath);
+      return { ok: true, filePath: out.filePath, bytes: out.bytes };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   });
 
   ipcMain.handle('theme:import-paths', async (_ev, filePaths) => {
@@ -469,6 +513,49 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     return { ok: true, path: resolved, state: getFullState() };
   });
 
+  ipcMain.handle('cli:sync-external', (_ev, termName) => {
+    try {
+      const res = syncExternalTerminalConfig(termName, store.config);
+      return { ...res, state: getFullState() };
+    } catch (err) {
+      return { ok: false, error: err.message, state: getFullState() };
+    }
+  });
+
+  ipcMain.handle('cli:export-preset', async () => {
+    const win = getMainWindow();
+    const slug = (store.config.cli?.presetId || 'custom').replace(/[^a-z0-9-_]/gi, '-');
+    const res = await dialog.showSaveDialog(win, {
+      title: 'Export agy CLI preset (.json)',
+      defaultPath: `agy-cli-${slug}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    });
+    if (res.canceled || !res.filePath) return { ok: false };
+    fs.writeFileSync(res.filePath, exportCliPresetJson(store.config), 'utf8');
+    return { ok: true, filePath: res.filePath };
+  });
+
+  ipcMain.handle('cli:import-preset', async () => {
+    const win = getMainWindow();
+    const res = await dialog.showOpenDialog(win, {
+      title: 'Import agy CLI preset (.json)',
+      properties: ['openFile'],
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    });
+    if (res.canceled || !res.filePaths.length) return { ok: false, state: getFullState() };
+    try {
+      const { name, cliPatch } = parseCliPresetJson(fs.readFileSync(res.filePaths[0], 'utf8'));
+      store.saveConfig({ cli: cliPatch });
+      applyAgyCliSettings(store.config);
+      if (getCliStatus().windowsTerminalDetected) {
+        syncWindowsTerminalProfile(store.config, store.baseDir);
+      }
+      return { ok: true, name, state: getFullState() };
+    } catch (err) {
+      return { ok: false, error: err.message, state: getFullState() };
+    }
+  });
+
   // --- Guided Setup (select 1, multiple, or all 3 surfaces) ---
   ipcMain.handle('setup:install', async (_ev, options = {}) => {
     const ide = Boolean(options.ide);
@@ -600,6 +687,19 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
   ipcMain.handle('app:open-data-dir', () => {
     shell.openPath(store.baseDir);
     return { ok: true };
+  });
+
+  ipcMain.handle('app:check-updates', async () => {
+    const ver = typeof app?.getVersion === 'function' ? app.getVersion() : '1.1.0';
+    return checkForUpdates(ver);
+  });
+
+  ipcMain.handle('app:open-external', (_ev, url) => {
+    if (typeof url === 'string' && /^https:\/\/github\.com\/yammdd\/antigravity-mod(\/|$)/i.test(url)) {
+      shell.openExternal(url);
+      return { ok: true };
+    }
+    return { ok: false };
   });
 
   ipcMain.on('window:minimize', () => getMainWindow()?.minimize());

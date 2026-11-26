@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('themeAPI', {
   deleteLocalTheme: (themeId) => ipcRenderer.invoke('theme:delete-local', themeId),
   importThemes: () => ipcRenderer.invoke('theme:import-themes'),
   importPack: () => ipcRenderer.invoke('theme:import-pack'),
+  importPackZip: () => ipcRenderer.invoke('theme:import-pack-zip'),
+  exportPackZip: (themeId) => ipcRenderer.invoke('theme:export-pack-zip', themeId),
   openThemesFolder: () => ipcRenderer.invoke('theme:open-folder'),
   openThemeFile: (themeId) => ipcRenderer.invoke('theme:open-file', themeId),
   reloadAllThemes: () => ipcRenderer.invoke('theme:reload-all'),
@@ -46,6 +48,9 @@ contextBridge.exposeInMainWorld('themeAPI', {
   restoreWindowsTerminal: () => ipcRenderer.invoke('cli:restore-wt'),
   launchCliTerminal: () => ipcRenderer.invoke('cli:launch-terminal'),
   pickCliBgImage: () => ipcRenderer.invoke('cli:pick-bg-image'),
+  syncExternalTerminal: (termName) => ipcRenderer.invoke('cli:sync-external', termName),
+  exportCliPreset: () => ipcRenderer.invoke('cli:export-preset'),
+  importCliPreset: () => ipcRenderer.invoke('cli:import-preset'),
 
   // IDE & App integration
   inspectDom: () => ipcRenderer.invoke('ide:inspect-dom'),
@@ -55,6 +60,8 @@ contextBridge.exposeInMainWorld('themeAPI', {
   exportBackup: () => ipcRenderer.invoke('app:export-backup'),
   importBackup: () => ipcRenderer.invoke('app:import-backup'),
   openDataDir: () => ipcRenderer.invoke('app:open-data-dir'),
+  checkForUpdates: () => ipcRenderer.invoke('app:check-updates'),
+  openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
 
   getPathForFile: (file) => {
     try {
