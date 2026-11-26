@@ -12,12 +12,19 @@ const { buildInjectScript, buildRemoveScript } = require('../electron/injector/r
 const { LocalMediaServer } = require('../electron/core/media-server.cjs');
 const {
   CLI_THEME_PRESETS,
+  CLI_SHADER_PRESETS,
   stripJsonc,
+  resolvePersistentShaderPath,
   buildAnsiPalette,
   formatStatusLineCommand,
   generateStatusLineScript,
   generateTerminalSnippets,
+  syncExternalTerminalConfig,
+  exportCliPresetJson,
+  parseCliPresetJson,
 } = require('../electron/core/cli-themer.cjs');
+const { createZipFromDir, extractZipSafe } = require('../electron/core/zip-pack.cjs');
+const { compareSemver } = require('../electron/core/updater.cjs');
 const { CdpBridge } = require('../electron/core/cdp-bridge.cjs');
 
 async function run() {
@@ -251,7 +258,57 @@ async function run() {
       'app'
     );
 
-    console.log('ALL 3-SURFACE CORE TESTS PASSED (IDE + App + CLI)');
+    // 9. v1.1.0 features: HLSL shaders, custom ANSI palette + JSON preset, 1-click external terminal sync, ZIP pack, updater
+    assert.strictEqual(CLI_SHADER_PRESETS.length, 4, 'must ship None + 3 HLSL shaders');
+    for (const sh of CLI_SHADER_PRESETS.filter((s) => s.id !== 'none')) {
+      const copiedShader = resolvePersistentShaderPath(sh.id, tmpDir);
+      assert.ok(copiedShader && fs.existsSync(copiedShader), `HLSL shader ${sh.id} must resolve and copy cleanly`);
+    }
+
+    const customCfg = {
+      ...DEFAULT_CONFIG,
+      cli: {
+        ...DEFAULT_CONFIG.cli,
+        presetId: 'custom',
+        terminalShader: 'subtle-vignette',
+        customPalette: { background: '#101218', blue: '#00d1b2' },
+      },
+    };
+    const customPal = buildAnsiPalette(customCfg);
+    assert.strictEqual(customPal.background, '#101218');
+    assert.strictEqual(customPal.blue, '#00d1b2');
+    const exportedPreset = exportCliPresetJson(customCfg);
+    const parsedPreset = parseCliPresetJson(exportedPreset);
+    assert.strictEqual(parsedPreset.cliPatch.customPalette.background, '#101218');
+    assert.strictEqual(parsedPreset.cliPatch.terminalShader, 'subtle-vignette');
+
+    const fakeHome = path.join(tmpDir, 'fake-home');
+    for (const term of ['ghostty', 'kitty', 'alacritty', 'wezterm']) {
+      const syncRes = syncExternalTerminalConfig(term, customCfg, fakeHome);
+      assert.strictEqual(syncRes.ok, true, `external sync for ${term} must succeed`);
+      assert.ok(fs.existsSync(syncRes.themePath), `${term} theme file must exist`);
+    }
+    // Second write to ghostty should create .agthemes.bak backup cleanly
+    syncExternalTerminalConfig('ghostty', customCfg, fakeHome);
+    assert.ok(fs.existsSync(path.join(fakeHome, '.config', 'ghostty', 'config.agthemes.bak')));
+
+    // ZIP Theme Pack export + import round-trip + zip-slip rejection
+    const zipOut = path.join(tmpDir, 'carbon-studio.agtheme.zip');
+    mgr.exportPackZip('pack:carbon-studio', zipOut);
+    assert.ok(fs.existsSync(zipOut) && fs.statSync(zipOut).size > 200);
+    const extractedDir = path.join(tmpDir, 'zip-check');
+    extractZipSafe(zipOut, extractedDir);
+    assert.ok(fs.existsSync(path.join(extractedDir, 'theme.json')));
+    const importedZip = mgr.importThemeItems([zipOut]);
+    assert.strictEqual(importedZip.length, 1);
+    assert.ok(importedZip[0].id.startsWith('pack:carbon-studio'));
+
+    // Updater semver comparisons
+    assert.strictEqual(compareSemver('1.1.0', '1.0.0'), 1);
+    assert.strictEqual(compareSemver('v1.1.0', '1.1.0'), 0);
+    assert.strictEqual(compareSemver('1.0.9', '1.1.0'), -1);
+
+    console.log('ALL 3-SURFACE CORE TESTS PASSED (IDE + App + CLI + v1.1.0)');
   } finally {
     srv.stop();
     fs.rmSync(tmpDir, { recursive: true, force: true });
