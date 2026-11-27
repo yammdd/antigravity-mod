@@ -1,6 +1,6 @@
 {
   "name": "antigravity-themes",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "UI theme manager, QuickCSS editor, and standalone CLI studio for Google Antigravity IDE, App, and agy CLI",
   "author": "Thanh-Dan Bui",
   "license": "MIT",

@@ -61,7 +61,8 @@ Antigravity Themes customizes Google Antigravity across three independent surfac
 | Live QuickCSS & online CSS | Yes (`Ctrl+S` + `https://`) | Yes (`Ctrl+S` + `https://`) | — |
 | Custom local fonts (`.woff2`/`.ttf`/`.otf`) | Yes | Yes | Via terminal profile |
 | Image, animated GIF & video backdrops | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` (0-FPS idle pause) | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` (0-FPS idle pause) | `.jpg`, `.png`, `.gif` (+ auto `.mp4`/`.webm` → `.gif`) |
-| Chat polish & diagnostics | Opt-in long code block folding + live DOM selector check | Opt-in long code block folding + live DOM selector check | CLI health diagnostics, HLSL shaders & modular `statusLine` |
+| Live dynamic animations | 12 live canvas FX (Aurora Waves, Shooting Stars, Constellation, Bokeh, Fireflies, Snow, Sakura, Rain, Ripples, Code Rain, Synthwave Grid, Stars) + Speed/Intensity + Dynamic UI motion | 12 live canvas FX + Speed/Intensity + Dynamic UI motion | Windows Terminal HLSL shaders, `runningLightSpeed`, modular `statusLine` |
+| Chat polish & diagnostics | Opt-in long code block folding + live DOM selector check | Opt-in long code block folding + live DOM selector check | CLI health diagnostics & `altScreenMode` |
 
 ## Installation
 
@@ -75,7 +76,7 @@ Download the latest release from [GitHub Releases](https://github.com/yammdd/ant
 | **macOS** | `Antigravity-Themes-<version>.dmg` | Drag to Applications |
 | **Linux (x64)** | `Antigravity-Themes-<version>.AppImage` | `chmod +x` and run |
 
-Each release includes `SHA256SUMS.txt` so you can verify file integrity (`certutil -hashfile Antigravity-Themes-1.2.1.exe SHA256` on Windows or `sha256sum -c SHA256SUMS.txt` on Linux/macOS).
+Each release includes `SHA256SUMS.txt` so you can verify file integrity (`certutil -hashfile Antigravity-Themes-1.3.0.exe SHA256` on Windows or `sha256sum -c SHA256SUMS.txt` on Linux/macOS).
 
 > **Note on unsigned open-source builds**: Prebuilt executables are compiled directly from this repository via GitHub Actions without a paid code-signing certificate, so Windows SmartScreen or macOS Gatekeeper may prompt on first launch. You can verify the checksum against `SHA256SUMS.txt` or build locally from source.
 

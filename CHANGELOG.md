@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-11-27
+
+### Added
+- **12-Preset Live Dynamic Canvas Engine**: Expanded real-time animations with 9 new dynamic effects (*Live Aurora Waves*, *Shooting Stars*, *Star Constellation*, *Ambient Bokeh Orbs*, *Warm Fireflies*, *Winter Snowfall*, *Raindrop Ripples*, *Neon Code Rain*, *Synthwave Grid*) alongside *Sakura Petals*, *Midnight Rain*, and *Starlight Drift* — all accent-aware, reduced-motion-safe, and 0-FPS idle-paused when unfocused.
+- **Live Speed & Intensity Controls**: Tune `Animation speed` (`0.4x`–`2.2x`) and `Animation intensity & density` (`25%`–`150%`) live in Studio with matching real-time preview inside `FxPreviewCanvas`.
+- **Parallel Dynamic UI Motion**: Decoupled `Dynamic UI motion` (titlebar accent light glide, smooth reply fade-rise, focus pulse) so it runs simultaneously alongside any live canvas FX.
+- **Dynamic-First 4K Theme Packs**: Paired all curated 4K UHD packs and *Carbon Studio* with tailored live dynamic animations by default (`SEED_VERSION = 8`) while keeping all 4K backdrops intact.
+
 ## [1.2.1] - 2026-11-27
 
 ### Changed
