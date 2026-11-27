@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const BROWSER_FALLBACK_STATE = {
-  appVersion: '1.2.0',
+  appVersion: '1.3.0',
   systemDark: true,
   config: {
     setupCompleted: false,
@@ -26,7 +26,10 @@ const BROWSER_FALLBACK_STATE = {
     foldLongCodeBlocks: false,
     cornerRadius: 10,
     borderStyle: 'hairline',
-    animationPreset: 'none',
+    animationPreset: 'aurora-waves',
+    animationSpeed: 1,
+    animationIntensity: 100,
+    dynamicUiMotion: true,
     tabsStyle: 'default',
     activityBarStyle: 'subtle',
     statusBarStyle: 'clean',

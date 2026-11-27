@@ -18,7 +18,7 @@
     "colorMode": "dark",
     "surfaceTint": "warm",
     "accentColor": "#f59e0b",
-    "animationPreset": "rain",
+    "animationPreset": "floating-bokeh",
     "dimming": 26,
     "wallpaperBlur": 0,
     "sidebarOpacity": 58,

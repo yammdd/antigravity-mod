@@ -18,7 +18,7 @@
     "colorMode": "dark",
     "surfaceTint": "ink",
     "accentColor": "#3b82f6",
-    "animationPreset": "none",
+    "animationPreset": "snow",
     "dimming": 24,
     "wallpaperBlur": 0,
     "sidebarOpacity": 58,

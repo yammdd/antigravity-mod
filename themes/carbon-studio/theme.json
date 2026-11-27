@@ -9,7 +9,7 @@
     "cli"
   ],
   "animation": {
-    "preset": "tab-slide"
+    "preset": "aurora-waves"
   },
   "cli": {
     "colorScheme": "terminal",
@@ -23,7 +23,8 @@
     "colorMode": "dark",
     "surfaceTint": "graphite",
     "accentColor": "#3b82f6",
-    "animationPreset": "tab-slide",
+    "animationPreset": "aurora-waves",
+    "dynamicUiMotion": true,
     "wallpaperEnabled": false,
     "tabsStyle": "default",
     "cornerRadius": 10

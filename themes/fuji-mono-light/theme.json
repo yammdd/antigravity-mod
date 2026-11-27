@@ -18,7 +18,7 @@
     "colorMode": "light",
     "surfaceTint": "graphite",
     "accentColor": "#2563eb",
-    "animationPreset": "none",
+    "animationPreset": "snow",
     "dimming": 22,
     "wallpaperBlur": 2,
     "sidebarOpacity": 74,

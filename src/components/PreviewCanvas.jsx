@@ -137,7 +137,14 @@ export default function PreviewCanvas({
                   style={{ backgroundColor: `rgba(${ramp.rgb}, ${dimAlpha.toFixed(2)})` }}
                 />
               )}
-              {config.enabled && <FxPreviewCanvas preset={config.animationPreset} />}
+              {config.enabled && (
+                <FxPreviewCanvas
+                  preset={config.animationPreset}
+                  accentRgb={accentRgb}
+                  speed={config.animationSpeed ?? 1}
+                  intensity={config.animationIntensity ?? 100}
+                />
+              )}
             </>
           )}
 

@@ -26,10 +26,40 @@ export const MONO_FONTS = [
 
 export const ANIMATION_PRESETS = [
   {
-    id: 'none',
-    label: 'None',
-    desc: 'Static clean background',
-    badge: 'OFF',
+    id: 'aurora-waves',
+    label: 'Live Aurora Waves',
+    desc: 'Flowing luminous aurora ribbons synced with your accent color',
+    badge: 'DYNAMIC',
+  },
+  {
+    id: 'shooting-stars',
+    label: 'Shooting Stars',
+    desc: 'Twinkling night starfield with glowing meteors streaking across',
+    badge: 'LIVE',
+  },
+  {
+    id: 'constellation',
+    label: 'Star Constellation',
+    desc: 'Connected glowing node mesh drifting smoothly across the canvas',
+    badge: 'DYNAMIC',
+  },
+  {
+    id: 'floating-bokeh',
+    label: 'Ambient Bokeh Orbs',
+    desc: 'Soft glowing depth bokeh orbs floating smoothly in accent tones',
+    badge: 'LIVE',
+  },
+  {
+    id: 'fireflies',
+    label: 'Warm Fireflies',
+    desc: 'Golden fireflies drifting with soft breathing radial bloom',
+    badge: 'LIVE',
+  },
+  {
+    id: 'snow',
+    label: 'Winter Snowfall',
+    desc: 'Parallax multi-depth snowfall with gentle wind drift',
+    badge: 'LIVE',
   },
   {
     id: 'sakura',
@@ -44,40 +74,46 @@ export const ANIMATION_PRESETS = [
     badge: 'LIVE',
   },
   {
+    id: 'water-ripples',
+    label: 'Raindrop Ripples',
+    desc: 'Expanding concentric water rings fading gently across the backdrop',
+    badge: 'LIVE',
+  },
+  {
+    id: 'matrix-rain',
+    label: 'Neon Code Rain',
+    desc: 'Subtle cascading monospace glyphs tinted by your accent color',
+    badge: 'DYNAMIC',
+  },
+  {
+    id: 'cyber-grid',
+    label: 'Synthwave Grid',
+    desc: 'Moving perspective horizon grid glowing subtly in your accent color',
+    badge: 'DYNAMIC',
+  },
+  {
     id: 'stars',
     label: 'Starlight Drift',
-    desc: 'Calm floating starlight and firefly glints',
+    desc: 'Calm floating starlight glints across dark surfaces',
     badge: 'LIVE',
   },
   {
     id: 'ken-burns',
     label: 'Living Pan',
-    desc: 'Slow zoom & drift that brings static images to life',
+    desc: 'Slow zoom & drift motion on active backdrop artwork',
     badge: 'MOTION',
-  },
-  {
-    id: 'tab-slide',
-    label: 'Smooth UI',
-    desc: 'Subtle fade-rise on agent replies and tabs',
-    badge: 'UI',
-  },
-  {
-    id: 'aurora-edge',
-    label: 'Titlebar Glide',
-    desc: 'Thin accent light sweep under the titlebar',
-    badge: 'UI',
-  },
-  {
-    id: 'cursor-pulse',
-    label: 'Focus Ring',
-    desc: 'Gentle accent pulse on active chat box',
-    badge: 'UI',
   },
   {
     id: 'ambient-shift',
     label: 'Ambient Glow',
     desc: 'Slow 16s brightness breathing on active backdrop',
     badge: 'MOTION',
+  },
+  {
+    id: 'none',
+    label: 'None',
+    desc: 'No background canvas animation',
+    badge: 'OFF',
   },
 ];
 

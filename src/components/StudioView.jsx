@@ -80,7 +80,7 @@ export default function StudioView({
 
         <div className="anim-grid">
           {ANIMATION_PRESETS.map((preset) => {
-            const selected = (config.animationPreset || 'none') === preset.id;
+            const selected = (config.animationPreset || 'aurora-waves') === preset.id;
             return (
               <button
                 key={preset.id}
@@ -103,6 +103,34 @@ export default function StudioView({
             );
           })}
         </div>
+
+        <div className="grid-2" style={{ paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+          <SliderField
+            label="Animation speed"
+            value={Number(config.animationSpeed ?? 1)}
+            min={0.4}
+            max={2.2}
+            step={0.1}
+            unit="x"
+            onChange={(v) => onPatchConfig({ animationSpeed: Number(v) })}
+          />
+          <SliderField
+            label="Animation intensity & density"
+            value={Math.round(config.animationIntensity ?? 100)}
+            min={25}
+            max={150}
+            step={5}
+            unit="%"
+            onChange={(v) => onPatchConfig({ animationIntensity: Math.round(v) })}
+          />
+        </div>
+
+        <ToggleRow
+          label="Dynamic UI motion (titlebar light glide, smooth replies & focus pulse)"
+          hint="Runs alongside any live canvas animation; pauses automatically on reduced motion"
+          checked={config.dynamicUiMotion !== false}
+          onChange={(v) => onPatchConfig({ dynamicUiMotion: v }, true)}
+        />
       </div>
 
       <div className="grid-2">

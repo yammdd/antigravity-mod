@@ -119,7 +119,7 @@ class ThemeManager extends EventEmitter {
 
   seedStarterThemes() {
     if (!this.bundledThemesDir || !fs.existsSync(this.bundledThemesDir)) return;
-    const SEED_VERSION = '7';
+    const SEED_VERSION = '8';
     const markerPath = path.join(this.themesDir, '.seed-version');
     let currentVer = '';
     try {
