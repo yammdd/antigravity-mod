@@ -17,8 +17,10 @@ const {
   CLI_THEME_PRESETS,
   CLI_SHADER_PRESETS,
   getCliPresetsList,
+  resolveActiveCliPresetId,
   resolveTerminalBgImagePath,
   getCliStatus,
+  runCliDiagnostics,
   applyAgyCliSettings,
   testStatusLineScript,
   resetAgyCliSettings,
@@ -32,7 +34,15 @@ const {
 } = require('../core/cli-themer.cjs');
 const { setLoginAutoStart } = require('./autostart.cjs');
 
-function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, buildRuntimePayload }) {
+function registerIpc({
+  getMainWindow,
+  store,
+  themeManager,
+  cdp,
+  mediaServer,
+  buildRuntimePayload,
+  getSystemDark = () => true,
+}) {
   const getCliBgMediaUrl = () => {
     const rawBg = store.config.cli?.terminalBgImage || '';
     if (!rawBg) return '';
@@ -52,30 +62,35 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     }
   };
 
-  const getFullState = () => ({
-    appVersion: typeof app?.getVersion === 'function' ? app.getVersion() : '1.1.0',
-    config: store.config,
-    themes: themeManager.listLocalThemes(),
-    builtInWallpapers: themeManager.listBuiltInWallpapers(),
-    themesDir: themeManager.themesDir,
-    quickCss: themeManager.getQuickCss(),
-    onlineThemes: themeManager.getOnlineThemeStatuses(store.config.onlineThemeUrls),
-    wallpapers: store.getWallpapers(),
-    fonts: store.getFonts(),
-    mediaPort: mediaServer.port,
-    cdpStatus: cdp.getStatus(),
-    argvStatus: getArgvStatus(),
-    executables: findExecutables(),
-    cliStatus: getCliStatus(),
-    cliPresets: getCliPresetsList(),
-    cliShaders: CLI_SHADER_PRESETS,
-    cliBgMediaUrl: getCliBgMediaUrl(),
-    terminalSnippets: generateTerminalSnippets(store.config),
-  });
+  const getFullState = () => {
+    const systemDark = Boolean(getSystemDark());
+    return {
+      appVersion: typeof app?.getVersion === 'function' ? app.getVersion() : '1.2.0',
+      systemDark,
+      config: store.config,
+      themes: themeManager.listLocalThemes(),
+      builtInWallpapers: themeManager.listBuiltInWallpapers(),
+      themesDir: themeManager.themesDir,
+      quickCss: themeManager.getQuickCss(),
+      onlineThemes: themeManager.getOnlineThemeStatuses(store.config.onlineThemeUrls),
+      wallpapers: store.getWallpapers(),
+      fonts: store.getFonts(),
+      mediaPort: mediaServer.port,
+      cdpStatus: cdp.getStatus(),
+      argvStatus: getArgvStatus(),
+      executables: findExecutables(),
+      cliStatus: getCliStatus(),
+      cliActivePresetId: resolveActiveCliPresetId(store.config, systemDark),
+      cliPresets: getCliPresetsList(),
+      cliShaders: CLI_SHADER_PRESETS,
+      cliBgMediaUrl: getCliBgMediaUrl(),
+      terminalSnippets: generateTerminalSnippets(store.config, systemDark),
+    };
+  };
 
   const applyCurrentState = async () => {
     const payload = buildRuntimePayload();
-    syncIdeWindowControls(store.config, !store.config.enabled);
+    syncIdeWindowControls(store.config, !store.config.enabled, getSystemDark());
     if (store.config.enabled) {
       return cdp.applyNow(payload);
     }
@@ -99,9 +114,9 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     const onlyCliPatch = hasCliPatch && patchKeys.length === 1;
 
     if (hasCliPatch && store.config.autoApplyOnChange && store.config.cli?.enabled && safePatch.cli.enabled !== false) {
-      const cliRes = applyAgyCliSettings(store.config);
+      const cliRes = applyAgyCliSettings(store.config, getSystemDark());
       if (cliRes.ok && cliRes.status?.windowsTerminalDetected) {
-        syncWindowsTerminalProfile(store.config, store.baseDir);
+        syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
       }
     }
 
@@ -119,7 +134,7 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
 
   ipcMain.handle('theme:disable', async () => {
     store.saveConfig({ enabled: false });
-    syncIdeWindowControls(store.config, true);
+    syncIdeWindowControls(store.config, true, getSystemDark());
     const res = await cdp.disableAll();
     return { ...res, state: getFullState() };
   });
@@ -173,8 +188,8 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     store.saveConfig(patch);
 
     if (store.config.cli?.enabled && Boolean(store.config.cli?.terminalSyncThemeWallpaper)) {
-      applyAgyCliSettings(store.config);
-      syncWindowsTerminalProfile(store.config, store.baseDir);
+      applyAgyCliSettings(store.config, getSystemDark());
+      syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
     }
 
     await applyCurrentState();
@@ -208,7 +223,7 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
 
   ipcMain.handle('theme:export-studio-theme', async (_ev, meta) => {
     const kind = meta?.kind === 'pack' ? 'pack' : 'css';
-    const css = buildExportThemeCss(store.config, meta || {});
+    const css = buildExportThemeCss(store.config, meta || {}, getSystemDark());
     const created =
       kind === 'pack'
         ? themeManager.createThemePack({
@@ -434,14 +449,14 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     }
 
     store.saveConfig({ cli: cliPatch });
-    const cliRes = applyAgyCliSettings(store.config);
+    const cliRes = applyAgyCliSettings(store.config, getSystemDark());
     if (cliRes.ok && cliRes.status?.windowsTerminalDetected) {
-      syncWindowsTerminalProfile(store.config, store.baseDir);
+      syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
     }
     return { ...cliRes, preset, state: getFullState() };
   });
 
-  ipcMain.handle('cli:test-statusline', () => testStatusLineScript(store.config));
+  ipcMain.handle('cli:test-statusline', () => testStatusLineScript(store.config, getSystemDark()));
 
   ipcMain.handle('cli:restore-wt', () => {
     const res = restoreWindowsTerminalBackup();
@@ -450,9 +465,9 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
 
   ipcMain.handle('cli:apply-settings', () => {
     store.saveConfig({ cli: { enabled: true } });
-    const res = applyAgyCliSettings(store.config);
+    const res = applyAgyCliSettings(store.config, getSystemDark());
     if (res.ok && res.status?.windowsTerminalDetected) {
-      syncWindowsTerminalProfile(store.config, store.baseDir);
+      syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
     }
     return { ...res, state: getFullState() };
   });
@@ -461,6 +476,7 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     store.saveConfig({
       cli: {
         presetId: 'tokyo-night',
+        autoFollowOs: false,
         colorScheme: 'terminal',
         runningLightSpeed: 'medium',
         altScreenMode: 'auto',
@@ -471,19 +487,19 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     });
     const res = resetAgyCliSettings();
     if (res.status?.windowsTerminalDetected) {
-      syncWindowsTerminalProfile(store.config, store.baseDir);
+      syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
     }
     return { ...res, state: getFullState() };
   });
 
   ipcMain.handle('cli:sync-wt', () => {
-    const res = syncWindowsTerminalProfile(store.config, store.baseDir);
+    const res = syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
     return { ...res, state: getFullState() };
   });
 
   ipcMain.handle('cli:launch-terminal', () => {
-    applyAgyCliSettings(store.config);
-    const res = launchStyledCliTerminal(store.config, store.baseDir);
+    applyAgyCliSettings(store.config, getSystemDark());
+    const res = launchStyledCliTerminal(store.config, store.baseDir, getSystemDark());
     return { ...res, state: getFullState() };
   });
 
@@ -508,14 +524,14 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     }
     store.saveConfig({ cli: { terminalBgImage: resolved } });
     if (getCliStatus().windowsTerminalDetected) {
-      syncWindowsTerminalProfile(store.config, store.baseDir);
+      syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
     }
     return { ok: true, path: resolved, state: getFullState() };
   });
 
   ipcMain.handle('cli:sync-external', (_ev, termName) => {
     try {
-      const res = syncExternalTerminalConfig(termName, store.config);
+      const res = syncExternalTerminalConfig(termName, store.config, '', getSystemDark());
       return { ...res, state: getFullState() };
     } catch (err) {
       return { ok: false, error: err.message, state: getFullState() };
@@ -531,7 +547,7 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
       filters: [{ name: 'JSON', extensions: ['json'] }],
     });
     if (res.canceled || !res.filePath) return { ok: false };
-    fs.writeFileSync(res.filePath, exportCliPresetJson(store.config), 'utf8');
+    fs.writeFileSync(res.filePath, exportCliPresetJson(store.config, getSystemDark()), 'utf8');
     return { ok: true, filePath: res.filePath };
   });
 
@@ -546,9 +562,9 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     try {
       const { name, cliPatch } = parseCliPresetJson(fs.readFileSync(res.filePaths[0], 'utf8'));
       store.saveConfig({ cli: cliPatch });
-      applyAgyCliSettings(store.config);
+      applyAgyCliSettings(store.config, getSystemDark());
       if (getCliStatus().windowsTerminalDetected) {
-        syncWindowsTerminalProfile(store.config, store.baseDir);
+        syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
       }
       return { ok: true, name, state: getFullState() };
     } catch (err) {
@@ -578,7 +594,7 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
 
     if (ide) {
       const argvRes = configureIdeArgvCdp(true);
-      syncIdeWindowControls(store.config, false);
+      syncIdeWindowControls(store.config, false, getSystemDark());
       steps.push({
         id: 'ide',
         label: 'Antigravity IDE',
@@ -597,10 +613,10 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
     }
 
     if (cli) {
-      const cliRes = applyAgyCliSettings(store.config);
+      const cliRes = applyAgyCliSettings(store.config, getSystemDark());
       let detail = cliRes.ok ? 'Updated ~/.gemini/antigravity-cli/settings.json' : cliRes.error;
       if (cliRes.ok && cliRes.status?.windowsTerminalDetected) {
-        const wtRes = syncWindowsTerminalProfile(store.config, store.baseDir);
+        const wtRes = syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
         if (wtRes.ok) detail = 'Updated CLI settings and Windows Terminal profile';
       }
       steps.push({
@@ -629,15 +645,29 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
       enabled: false,
       cli: { enabled: false, statusLineEnabled: false },
     });
-    syncIdeWindowControls(store.config, true);
+    syncIdeWindowControls(store.config, true, getSystemDark());
     configureIdeArgvCdp(false);
     resetAgyCliSettings();
     await cdp.disableAll();
     return { ok: true, state: getFullState() };
   });
 
-  // --- IDE & App Integration ---
+  // --- IDE, App & CLI Diagnostics & Integration ---
   ipcMain.handle('ide:inspect-dom', () => cdp.inspectTargets());
+  ipcMain.handle('diagnostics:run-all', async () => {
+    const systemDark = Boolean(getSystemDark());
+    const [desktopTargets, cliDiag] = await Promise.all([
+      cdp.runCompatibilityCheck(),
+      Promise.resolve(runCliDiagnostics(store.config, store.baseDir, systemDark)),
+    ]);
+    return {
+      timestamp: new Date().toISOString(),
+      systemDark,
+      cdpStatus: cdp.getStatus(),
+      desktopTargets,
+      cli: cliDiag,
+    };
+  });
   ipcMain.handle('ide:configure-argv', (_ev, enable = true) => {
     const res = configureIdeArgvCdp(Boolean(enable));
     return { ...res, state: getFullState() };
@@ -690,7 +720,7 @@ function registerIpc({ getMainWindow, store, themeManager, cdp, mediaServer, bui
   });
 
   ipcMain.handle('app:check-updates', async () => {
-    const ver = typeof app?.getVersion === 'function' ? app.getVersion() : '1.1.0';
+    const ver = typeof app?.getVersion === 'function' ? app.getVersion() : '1.2.0';
     return checkForUpdates(ver);
   });
 

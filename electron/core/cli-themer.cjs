@@ -4,7 +4,7 @@ const { execFileSync, spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { getSurfaceRamp, parseHexTriple } = require('./defaults.cjs');
+const { getSurfaceRamp, parseHexTriple, resolveEffectiveColorMode } = require('./defaults.cjs');
 
 /**
  * Standalone Antigravity CLI (agy) theming engine:
@@ -546,17 +546,28 @@ function getCliPresetsList() {
   return Object.values(CLI_THEME_PRESETS);
 }
 
+function resolveActiveCliPresetId(config, systemDark = true) {
+  const cli = config?.cli || {};
+  if (cli.autoFollowOs) {
+    const picked = systemDark
+      ? (cli.darkPresetId || 'catppuccin-mocha')
+      : (cli.lightPresetId || 'github-light');
+    if (CLI_THEME_PRESETS[picked]) return picked;
+  }
+  return cli.presetId || 'tokyo-night';
+}
+
 /**
  * Builds active 16-color ANSI palette from either a standalone CLI preset or custom theme colors.
  */
-function buildAnsiPalette(config) {
-  const presetId = config?.cli?.presetId;
+function buildAnsiPalette(config, systemDark = true) {
+  const presetId = resolveActiveCliPresetId(config, systemDark);
   if (presetId && presetId !== 'custom' && CLI_THEME_PRESETS[presetId]) {
     return { ...CLI_THEME_PRESETS[presetId].palette };
   }
 
-  const isLight = config?.colorMode === 'light';
-  const ramp = getSurfaceRamp(config);
+  const isLight = resolveEffectiveColorMode(config, systemDark) === 'light';
+  const ramp = getSurfaceRamp(config, systemDark);
   const accent = config?.accentColor || '#3b82f6';
   const custom =
     presetId === 'custom' && config?.cli?.customPalette && typeof config.cli.customPalette === 'object'
@@ -618,8 +629,8 @@ function buildAnsiPalette(config) {
   };
 }
 
-function getCliAccentHex(config) {
-  const presetId = config?.cli?.presetId;
+function getCliAccentHex(config, systemDark = true) {
+  const presetId = resolveActiveCliPresetId(config, systemDark);
   if (presetId && presetId !== 'custom' && CLI_THEME_PRESETS[presetId]) {
     return CLI_THEME_PRESETS[presetId].accent;
   }
@@ -807,7 +818,7 @@ function repairQuotedStatusLineIfNeeded() {
   return true;
 }
 
-function applyAgyCliSettings(config) {
+function applyAgyCliSettings(config, systemDark = true) {
   const cli = config?.cli || {};
   const settingsPath = getAgyCliSettingsPath();
   const existing = readJsonOrEmpty(settingsPath);
@@ -815,8 +826,12 @@ function applyAgyCliSettings(config) {
     return { ok: false, error: 'Existing ~/.gemini/antigravity-cli/settings.json contains invalid JSON.' };
   }
 
+  const activePresetId = resolveActiveCliPresetId(config, systemDark);
+  const activePreset = CLI_THEME_PRESETS[activePresetId];
   const next = { ...existing };
-  next.colorScheme = cli.colorScheme || 'terminal';
+  next.colorScheme = cli.autoFollowOs && activePreset
+    ? (activePreset.agyColorScheme || 'terminal')
+    : (cli.colorScheme || 'terminal');
   next.runningLightSpeed = cli.runningLightSpeed || 'medium';
   if (cli.altScreenMode && cli.altScreenMode !== 'auto') {
     next.altScreenMode = cli.altScreenMode;
@@ -830,7 +845,7 @@ function applyAgyCliSettings(config) {
     const scriptPath = path.join(cliDir, 'agthemes-statusline.cjs');
     fs.writeFileSync(
       scriptPath,
-      generateStatusLineScript(cli.statusLinePreset || 'powerline', getCliAccentHex(config), {
+      generateStatusLineScript(cli.statusLinePreset || 'powerline', getCliAccentHex(config, systemDark), {
         showModel: cli.statusLineShowModel !== false,
         showFolder: cli.statusLineShowFolder !== false,
         showBranch: cli.statusLineShowBranch !== false,
@@ -852,42 +867,45 @@ function applyAgyCliSettings(config) {
   }
 
   writeJsonWithBackup(settingsPath, next);
-  return { ok: true, settingsPath, status: getCliStatus() };
+  return { ok: true, settingsPath, activePresetId, status: getCliStatus() };
 }
 
-function testStatusLineScript(config) {
+function testStatusLineScript(config, systemDark = true, dirOverride = '') {
   const cli = config?.cli || {};
   const settingsPath = getAgyCliSettingsPath();
-  const cliDir = path.dirname(settingsPath);
-  fs.mkdirSync(cliDir, { recursive: true });
-  const scriptPath = path.join(cliDir, 'agthemes-statusline.cjs');
-  fs.writeFileSync(
-    scriptPath,
-    generateStatusLineScript(cli.statusLinePreset || 'powerline', getCliAccentHex(config), {
-      showModel: cli.statusLineShowModel !== false,
-      showFolder: cli.statusLineShowFolder !== false,
-      showBranch: cli.statusLineShowBranch !== false,
-      showContextBar: cli.statusLineShowContextBar !== false,
-      showClock: Boolean(cli.statusLineShowClock),
-      prefix: cli.statusLinePrefix ?? '◆',
-    }),
-    'utf8'
-  );
+  const cliDir = dirOverride || path.dirname(settingsPath);
+  const scriptPath = path.join(cliDir, dirOverride ? 'agthemes-statusline-probe.cjs' : 'agthemes-statusline.cjs');
 
   try {
+    fs.mkdirSync(cliDir, { recursive: true });
+    fs.writeFileSync(
+      scriptPath,
+      generateStatusLineScript(cli.statusLinePreset || 'powerline', getCliAccentHex(config, systemDark), {
+        showModel: cli.statusLineShowModel !== false,
+        showFolder: cli.statusLineShowFolder !== false,
+        showBranch: cli.statusLineShowBranch !== false,
+        showContextBar: cli.statusLineShowContextBar !== false,
+        showClock: Boolean(cli.statusLineShowClock),
+        prefix: cli.statusLinePrefix ?? '◆',
+      }),
+      'utf8'
+    );
     const sample = JSON.stringify({
       cwd: path.join(os.homedir(), 'antigravity-project'),
       model: { display_name: 'Gemini 4 Neon' },
       git: { branch: 'main' },
       context_window: { used_percentage: 28 },
     });
-    const out = execFileSync('node', [scriptPath], { input: sample, encoding: 'utf8', timeout: 3000 });
+    const out = execFileSync('node', [scriptPath], { input: sample, encoding: 'utf8', timeout: 3000, windowsHide: true });
     const plainText = out.replace(/\x1b\[[0-9;]*m/g, '').trim();
+    if (dirOverride) {
+      try { fs.unlinkSync(scriptPath); } catch (_) {}
+    }
     return { ok: true, plainText, scriptPath };
   } catch (err) {
     return {
       ok: false,
-      error: `Node.js is required in PATH for custom statusLine (${err.message}).`,
+      error: `Node.js statusLine test failed (${err.message}).`,
     };
   }
 }
@@ -909,7 +927,7 @@ function resetAgyCliSettings() {
 /**
  * Syncs Windows Terminal: creates/updates "Antigravity CLI" profile (and optionally profiles.defaults).
  */
-function syncWindowsTerminalProfile(config, appBaseDir = '') {
+function syncWindowsTerminalProfile(config, appBaseDir = '', systemDark = true) {
   const wtPaths = getWindowsTerminalSettingsPaths();
   if (!wtPaths.length) {
     return { ok: false, error: 'Windows Terminal settings.json not found on this machine.' };
@@ -922,7 +940,7 @@ function syncWindowsTerminalProfile(config, appBaseDir = '') {
   }
 
   const cli = config?.cli || {};
-  const scheme = buildAnsiPalette(config);
+  const scheme = buildAnsiPalette(config, systemDark);
 
   if (!Array.isArray(parsed.schemes)) parsed.schemes = [];
   const schemeIdx = parsed.schemes.findIndex(
@@ -1032,11 +1050,11 @@ function restoreWindowsTerminalBackup() {
   return { ok: true, status: getCliStatus() };
 }
 
-function launchStyledCliTerminal(config, appBaseDir = '') {
+function launchStyledCliTerminal(config, appBaseDir = '', systemDark = true) {
   if (process.platform !== 'win32') {
     return { ok: false, error: 'Direct Windows Terminal launch is available on Windows.' };
   }
-  const syncRes = syncWindowsTerminalProfile(config, appBaseDir);
+  const syncRes = syncWindowsTerminalProfile(config, appBaseDir, systemDark);
   if (!syncRes.ok) return syncRes;
 
   try {
@@ -1055,9 +1073,9 @@ function launchStyledCliTerminal(config, appBaseDir = '') {
 /**
  * Generates portable terminal theme configs for Ghostty, WezTerm, Kitty, and Alacritty.
  */
-function generateTerminalSnippets(config) {
+function generateTerminalSnippets(config, systemDark = true) {
   const cli = config?.cli || {};
-  const p = buildAnsiPalette(config);
+  const p = buildAnsiPalette(config, systemDark);
   const font = cli.terminalFontFace || 'JetBrainsMono Nerd Font';
   const size = Number(cli.terminalFontSize) || 11;
   const pad = Number(cli.terminalPadding ?? 12);
@@ -1210,9 +1228,9 @@ function upsertManagedBlock(filePath, beginMarker, endMarker, body) {
 /**
  * 1-click config sync for Ghostty, WezTerm, Kitty, and Alacritty with automatic .agthemes.bak backup.
  */
-function syncExternalTerminalConfig(termName, config, baseDirOverride = '') {
+function syncExternalTerminalConfig(termName, config, baseDirOverride = '', systemDark = true) {
   const safeTerm = String(termName || '').toLowerCase();
-  const snippets = generateTerminalSnippets(config);
+  const snippets = generateTerminalSnippets(config, systemDark);
   const home = baseDirOverride || os.homedir();
   const xdg = baseDirOverride
     ? path.join(baseDirOverride, '.config')
@@ -1306,16 +1324,17 @@ function syncExternalTerminalConfig(termName, config, baseDirOverride = '') {
   return { ok: false, error: `Unsupported terminal target: ${termName}` };
 }
 
-function exportCliPresetJson(config) {
+function exportCliPresetJson(config, systemDark = true) {
   const cli = config?.cli || {};
-  const palette = buildAnsiPalette(config);
+  const palette = buildAnsiPalette(config, systemDark);
+  const activePresetId = resolveActiveCliPresetId(config, systemDark);
   const cleanPal = { ...palette };
   delete cleanPal.name;
   return JSON.stringify(
     {
       schema: 'antigravity-cli-preset/v1',
       exportedAt: new Date().toISOString(),
-      name: cli.presetId && CLI_THEME_PRESETS[cli.presetId] ? CLI_THEME_PRESETS[cli.presetId].name : 'Custom CLI Preset',
+      name: activePresetId && CLI_THEME_PRESETS[activePresetId] ? CLI_THEME_PRESETS[activePresetId].name : 'Custom CLI Preset',
       cli: {
         presetId: 'custom',
         colorScheme: cli.colorScheme || 'terminal',
@@ -1362,12 +1381,172 @@ function parseCliPresetJson(rawText) {
   return { name: parsed.name || 'Imported CLI Preset', cliPatch: patch };
 }
 
+/**
+ * Non-destructive health & compatibility diagnostics for the agy CLI surface.
+ */
+function runCliDiagnostics(config, appBaseDir = '', systemDark = true) {
+  const cli = config?.cli || {};
+  const checks = [];
+  const activePresetId = resolveActiveCliPresetId(config, systemDark);
+
+  // 1. agy binary detection
+  const exeCandidate = resolveAgyExecutablePath();
+  let agyFound = exeCandidate !== 'agy' && fs.existsSync(exeCandidate);
+  let agyDetail = agyFound ? exeCandidate : '';
+  if (!agyFound) {
+    try {
+      const locator = process.platform === 'win32' ? 'where' : 'which';
+      const out = execFileSync(locator, ['agy'], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+        timeout: 2500,
+        windowsHide: true,
+      }).trim();
+      if (out) {
+        agyFound = true;
+        agyDetail = out.split(/\r?\n/)[0].trim();
+      }
+    } catch (_) {}
+  }
+  checks.push({
+    id: 'agy-binary',
+    label: 'agy CLI executable',
+    status: agyFound ? 'OK' : 'WARN',
+    detail: agyFound ? `Found at ${agyDetail}` : 'Not found in PATH or default install directories',
+  });
+
+  // 2. ~/.gemini/antigravity-cli/settings.json
+  const settingsPath = getAgyCliSettingsPath();
+  if (!fs.existsSync(settingsPath)) {
+    checks.push({
+      id: 'agy-settings',
+      label: 'CLI settings.json',
+      status: 'INFO',
+      detail: `Not created yet (${settingsPath}) — click Apply CLI Theme to initialize`,
+    });
+  } else {
+    const parsed = readJsonOrEmpty(settingsPath);
+    if (parsed === null) {
+      checks.push({
+        id: 'agy-settings',
+        label: 'CLI settings.json',
+        status: 'ERROR',
+        detail: `Invalid JSON in ${settingsPath}`,
+      });
+    } else {
+      const quotedCmd = typeof parsed?.statusLine?.command === 'string' && /^node\s+"/.test(parsed.statusLine.command);
+      checks.push({
+        id: 'agy-settings',
+        label: 'CLI settings.json',
+        status: quotedCmd ? 'WARN' : 'OK',
+        detail: quotedCmd
+          ? 'Valid JSON, but statusLine.command contains quotes — re-apply to auto-repair'
+          : `Valid JSON (colorScheme=${parsed.colorScheme || 'terminal'}, statusLine=${parsed.statusLine?.enabled ? 'on' : 'off'})`,
+      });
+    }
+  }
+
+  // 3. statusLine live execution check (isolated temp probe so diagnostics never mutate ~/.gemini)
+  if (cli.statusLineEnabled) {
+    const slRes = testStatusLineScript(config, systemDark, appBaseDir || os.tmpdir());
+    checks.push({
+      id: 'statusline-runner',
+      label: 'Node statusLine script',
+      status: slRes.ok ? 'OK' : 'ERROR',
+      detail: slRes.ok ? `Rendered: ${slRes.plainText}` : slRes.error,
+    });
+  } else {
+    checks.push({
+      id: 'statusline-runner',
+      label: 'Node statusLine script',
+      status: 'INFO',
+      detail: 'Disabled in CLI Studio settings',
+    });
+  }
+
+  // 4. Terminal emulator integration
+  const st = getCliStatus();
+  if (process.platform === 'win32') {
+    if (!st.windowsTerminalDetected) {
+      checks.push({
+        id: 'terminal-profile',
+        label: 'Windows Terminal profile',
+        status: 'INFO',
+        detail: 'Windows Terminal not detected; use Ghostty/WezTerm/Kitty/Alacritty config sync instead',
+      });
+    } else {
+      checks.push({
+        id: 'terminal-profile',
+        label: 'Windows Terminal profile',
+        status: st.wtProfileInstalled ? 'OK' : 'WARN',
+        detail: st.wtProfileInstalled
+          ? `"Antigravity CLI" profile installed${st.wtHasBackup ? ' (.agthemes.bak backup present)' : ''}`
+          : 'Windows Terminal detected — click Sync Windows Terminal to install profile',
+      });
+    }
+  } else {
+    const foundTerms = Object.entries(st.detectedTerminals || {})
+      .filter(([, v]) => v)
+      .map(([k]) => k);
+    checks.push({
+      id: 'terminal-profile',
+      label: 'External terminal emulators',
+      status: foundTerms.length ? 'OK' : 'INFO',
+      detail: foundTerms.length ? `Detected: ${foundTerms.join(', ')}` : 'No Ghostty/WezTerm/Kitty/Alacritty config folder found yet',
+    });
+  }
+
+  // 5. Active CLI background image / GIF
+  if (cli.terminalBgImage) {
+    const resolvedBg = resolveTerminalBgImagePath(cli.terminalBgImage, appBaseDir);
+    const exists = Boolean(resolvedBg && fs.existsSync(resolvedBg));
+    const ext = exists ? path.extname(resolvedBg).toLowerCase() : '';
+    const compat = ['.gif', '.png', '.jpg', '.jpeg'].includes(ext);
+    checks.push({
+      id: 'terminal-bg-media',
+      label: 'Terminal backdrop media',
+      status: exists && compat ? 'OK' : 'WARN',
+      detail: exists
+        ? `${path.basename(resolvedBg)} (${compat ? 'terminal-compatible' : `format ${ext}`})`
+        : `Configured file missing: ${cli.terminalBgImage}`,
+    });
+  } else {
+    checks.push({
+      id: 'terminal-bg-media',
+      label: 'Terminal backdrop media',
+      status: 'INFO',
+      detail: 'No background image/GIF configured',
+    });
+  }
+
+  // 6. Shader & ffmpeg availability
+  const shaderOk = !cli.terminalShader || cli.terminalShader === 'none' || Boolean(resolvePersistentShaderPath(cli.terminalShader, appBaseDir));
+  checks.push({
+    id: 'shader-and-ffmpeg',
+    label: 'HLSL shader & ffmpeg',
+    status: shaderOk ? 'OK' : 'WARN',
+    detail: `Shader: ${cli.terminalShader || 'none'}${shaderOk ? '' : ' (missing)'} · ffmpeg: ${st.ffmpegAvailable ? 'available' : 'not in PATH (optional, for MP4/WebM -> GIF)'}`,
+  });
+
+  const errorCount = checks.filter((c) => c.status === 'ERROR').length;
+  const warnCount = checks.filter((c) => c.status === 'WARN').length;
+  return {
+    ok: errorCount === 0,
+    activePresetId,
+    autoFollowOs: Boolean(cli.autoFollowOs),
+    systemDark: Boolean(systemDark),
+    summary: errorCount > 0 ? `${errorCount} error(s), ${warnCount} warning(s)` : (warnCount > 0 ? `${warnCount} warning(s)` : 'All CLI checks passed'),
+    checks,
+  };
+}
+
 module.exports = {
   CLI_THEME_PRESETS,
   CLI_SHADER_PRESETS,
   stripJsonc,
   isFfmpegAvailable,
   resolvePersistentShaderPath,
+  resolveActiveCliPresetId,
   getCliPresetsList,
   getAgyCliSettingsPath,
   resolveTerminalBgImagePath,
@@ -1378,6 +1557,7 @@ module.exports = {
   repairQuotedStatusLineIfNeeded,
   testStatusLineScript,
   getCliStatus,
+  runCliDiagnostics,
   applyAgyCliSettings,
   resetAgyCliSettings,
   syncWindowsTerminalProfile,

@@ -1,6 +1,6 @@
 'use strict';
 
-const { getSurfaceRamp, hexToRgbString } = require('../core/defaults.cjs');
+const { getSurfaceRamp, hexToRgbString, resolveEffectiveColorMode } = require('../core/defaults.cjs');
 
 const UI_FONT_MAP = {
   inter: "'Inter', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif",
@@ -89,9 +89,10 @@ function buildAnimationCss(preset, accentRgb) {
  * and Antigravity App ('app'), covering chrome variables, frosted glass popups,
  * sidebar cards, chat bubbles, composer, tabs, explorer rows, and editor polish.
  */
-function compileStylesheet({ config, targetKind, activeWallpaper, customFonts = [], userCss = '' }) {
-  const ramp = getSurfaceRamp(config);
-  const isLight = config.colorMode === 'light';
+function compileStylesheet({ config, targetKind, activeWallpaper, customFonts = [], userCss = '', systemDark = true }) {
+  const effectiveMode = resolveEffectiveColorMode(config, systemDark);
+  const ramp = getSurfaceRamp(config, systemDark);
+  const isLight = effectiveMode === 'light';
   const accentHex = config.accentColor || '#3b82f6';
   const accentRgb = hexToRgbString(accentHex);
   const surfaceRgb = ramp.rgb;
@@ -283,6 +284,8 @@ body[data-has-browser-hole="true"] .agy-shell[data-ag-hole="1"] #ag-theme-bg-lay
 .agy-inset-shell,
 .browser-hole-opaque,
 [data-main-content-body="true"],
+[data-testid="conversation-view"],
+[data-testid="autoscroll-viewport"],
 [class*="agy-inset-shell"],
 [class*="--shell-canvas"],
 .agy-shell main,
@@ -374,7 +377,7 @@ ${isLight ? `.agy-shell [class*="text-white"],
 }`}
 
 /* Unified Frosted Sidebar — eliminates harsh solid black project strips & sticky bars */
-.agy-shell aside, .agy-shell [data-sidebar="true"], .agy-shell .bg-sidebar:not(.surface-opaque) {
+.agy-shell aside, .agy-shell [data-sidebar="true"], .agy-shell [data-testid="sidebar-split"], .agy-shell .bg-sidebar:not(.surface-opaque) {
   background: var(--ag-sidebar-bg) !important;
   color: var(--ag-text-primary) !important;
   border-right: 1px solid var(--ag-border) !important;
@@ -423,12 +426,19 @@ ${isLight ? `.agy-shell [class*="text-white"],
   border: 1px solid var(--ag-border) !important;
 }
 
-/* Right Auxiliary Pane & Titlebar */
-.agy-shell [data-side-panel-body="true"] {
+/* Right Auxiliary Pane, Step Plans & Titlebar (includes v2.34-2.35 selectors) */
+.agy-shell [data-side-panel-body="true"],
+.agy-shell [data-testid="overview-panel-host"] {
   background: var(--ag-sidebar-bg) !important;
   color: var(--ag-text-primary) !important;
   border-left: 1px solid var(--ag-border) !important;
   ${hasWallpaper ? blurCss : ''}
+}
+.agy-shell [data-testid="step-plan"] {
+  background: var(--ag-card-bg) !important;
+  border: 1px solid var(--ag-border) !important;
+  border-radius: var(--ag-radius) !important;
+  ${blurCss}
 }
 .agy-shell [class*="@container/titlebar"] {
   position: relative;
@@ -462,10 +472,12 @@ ${bubbleCss}
 
 /* Frosted Glass Composer Card & Floating Menus/Popovers */
 .agy-shell .surface-composer,
-.agy-shell .surface-composer-card {
+.agy-shell .surface-composer-card,
+.agy-shell [data-testid="agent-input-box"] {
   background: var(--ag-card-bg) !important;
   color: var(--ag-text-primary) !important;
   border: 1px solid var(--ag-border) !important;
+  border-radius: var(--ag-radius) !important;
   ${blurCss}
   box-shadow: ${popupShadow} !important;
   transition: border-color 160ms ease, box-shadow 160ms ease !important;
@@ -473,20 +485,55 @@ ${bubbleCss}
 .agy-shell .surface-composer textarea,
 .agy-shell .surface-composer [contenteditable="true"],
 .agy-shell .surface-composer-card textarea,
-.agy-shell .surface-composer-card [contenteditable="true"] {
+.agy-shell .surface-composer-card [contenteditable="true"],
+.agy-shell [data-testid="agent-input-box"] textarea,
+.agy-shell [data-testid="agent-input-box"] [contenteditable="true"] {
   color: var(--ag-text-primary) !important;
   caret-color: var(--ag-accent) !important;
 }
 .agy-shell .surface-composer textarea::placeholder,
-.agy-shell .surface-composer-card textarea::placeholder {
+.agy-shell .surface-composer-card textarea::placeholder,
+.agy-shell [data-testid="agent-input-box"] textarea::placeholder {
   color: var(--ag-text-muted) !important;
   opacity: 1 !important;
 }
 .agy-shell .surface-composer:focus-within,
-.agy-shell .surface-composer-card:focus-within {
+.agy-shell .surface-composer-card:focus-within,
+.agy-shell [data-testid="agent-input-box"]:focus-within {
   border-color: rgba(var(--ag-accent-rgb), 0.65) !important;
   box-shadow: 0 0 0 1px rgba(var(--ag-accent-rgb), 0.28), ${popupShadow} !important;
 }
+${config.foldLongCodeBlocks ? `/* Opt-in Long Code Block Folding */
+.agy-shell .ag-code-fold-wrap {
+  position: relative !important;
+  border-radius: calc(var(--ag-radius) - 2px) !important;
+}
+.agy-shell .ag-code-fold-wrap.ag-code-fold-collapsed > pre {
+  max-height: 260px !important;
+  overflow: hidden !important;
+  mask-image: linear-gradient(to bottom, #000 72%, transparent 100%) !important;
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%) !important;
+}
+.agy-shell .ag-code-fold-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: 6px !important;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+  font-family: var(--ag-font-ui) !important;
+  font-weight: 500 !important;
+  color: var(--ag-text-primary) !important;
+  background: var(--ag-pill-bg) !important;
+  border: 1px solid var(--ag-border) !important;
+  border-radius: 999px !important;
+  cursor: pointer !important;
+  transition: border-color 140ms ease, background-color 140ms ease !important;
+}
+.agy-shell .ag-code-fold-btn:hover {
+  border-color: rgba(var(--ag-accent-rgb), 0.65) !important;
+  background: rgba(var(--ag-accent-rgb), 0.16) !important;
+}` : ''}
 [data-radix-popper-content-wrapper] > *,
 .agy-shell [role="menu"],
 .agy-shell [role="listbox"],
@@ -860,8 +907,9 @@ ${hasWallpaper ? `.monaco-workbench .part.editor,
   return sections.join('\n\n');
 }
 
-function buildExportThemeCss(config, meta = {}) {
-  const ramp = getSurfaceRamp(config);
+function buildExportThemeCss(config, meta = {}, systemDark = true) {
+  const effectiveMode = resolveEffectiveColorMode(config, systemDark);
+  const ramp = getSurfaceRamp(config, systemDark);
   const accentRgb = hexToRgbString(config.accentColor || '#3b82f6');
   const name = meta.name || 'My Antigravity Theme';
   const author = meta.author || 'User';
@@ -872,7 +920,7 @@ function buildExportThemeCss(config, meta = {}) {
  * @author ${author}
  * @version 1.0.0
  * @description ${description}
- * @colorMode ${config.colorMode === 'light' ? 'light' : 'dark'}
+ * @colorMode ${effectiveMode}
  * @surfaceTint ${config.surfaceTint || 'graphite'}
  * @accent ${config.accentColor || '#3b82f6'}
  */

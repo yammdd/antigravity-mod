@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, Menu, nativeImage, Tray } = require('electron');
+const { app, BrowserWindow, Menu, nativeImage, nativeTheme, Tray } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { LocalMediaServer } = require('../core/media-server.cjs');
@@ -66,17 +66,23 @@ function sendToRenderer(channel, payload) {
   }
 }
 
+function getSystemDark() {
+  return nativeTheme ? Boolean(nativeTheme.shouldUseDarkColors) : true;
+}
+
 function buildRuntimePayload() {
   const config = store.config;
+  const systemDark = getSystemDark();
   const bundle = themeManager.collectActiveBundle(config);
   const activeWallpaper = config.wallpaperEnabled
     ? store.getActiveWallpaper() || themeManager.getBuiltInWallpaperById(config.wallpaperId) || bundle.packBackdrop || null
     : null;
   const customFonts = store.getFonts();
-  const ramp = getSurfaceRamp(config);
+  const ramp = getSurfaceRamp(config, systemDark);
 
   return {
     config,
+    systemDark,
     wallpaper: activeWallpaper,
     surfaceRgb: ramp.rgb,
     cssIde: compileStylesheet({
@@ -85,6 +91,7 @@ function buildRuntimePayload() {
       activeWallpaper,
       customFonts,
       userCss: bundle.ideCss,
+      systemDark,
     }),
     cssIdeChat: compileStylesheet({
       config,
@@ -92,6 +99,7 @@ function buildRuntimePayload() {
       activeWallpaper,
       customFonts,
       userCss: bundle.appCss,
+      systemDark,
     }),
     cssApp: compileStylesheet({
       config,
@@ -99,6 +107,7 @@ function buildRuntimePayload() {
       activeWallpaper,
       customFonts,
       userCss: bundle.appCss,
+      systemDark,
     }),
     ts: Date.now(),
   };
@@ -169,7 +178,7 @@ function createTray(getFullState) {
       click: async () => {
         if (!store || !cdp) return;
         store.saveConfig({ enabled: true });
-        syncIdeWindowControls(store.config, false);
+        syncIdeWindowControls(store.config, false, getSystemDark());
         await cdp.applyNow(buildRuntimePayload());
         sendToRenderer('theme:state-updated', getFullState());
       },
@@ -179,7 +188,7 @@ function createTray(getFullState) {
       click: async () => {
         if (!store || !cdp) return;
         store.saveConfig({ enabled: false });
-        syncIdeWindowControls(store.config, true);
+        syncIdeWindowControls(store.config, true, getSystemDark());
         await cdp.disableAll();
         sendToRenderer('theme:state-updated', getFullState());
       },
@@ -240,8 +249,8 @@ if (!gotLock) {
     // On CLI v2 migration, immediately re-sync CLI settings & Windows Terminal so .jpg wallpaper & defaults apply cleanly
     if (store.didMigrateCli && store.config.cli?.enabled) {
       try {
-        applyAgyCliSettings(store.config);
-        syncWindowsTerminalProfile(store.config, store.baseDir);
+        applyAgyCliSettings(store.config, getSystemDark());
+        syncWindowsTerminalProfile(store.config, store.baseDir, getSystemDark());
       } catch (_) {}
     }
 
@@ -257,7 +266,27 @@ if (!gotLock) {
       cdp,
       mediaServer,
       buildRuntimePayload,
+      getSystemDark,
     });
+
+    if (nativeTheme && typeof nativeTheme.on === 'function') {
+      nativeTheme.on('updated', async () => {
+        if (!store) return;
+        const dark = getSystemDark();
+        if (store.config.enabled && store.config.colorMode === 'auto') {
+          await applyCurrentState();
+        }
+        if (store.config.cli?.enabled && store.config.cli?.autoFollowOs) {
+          try {
+            const cliRes = applyAgyCliSettings(store.config, dark);
+            if (cliRes.ok && cliRes.status?.windowsTerminalDetected) {
+              syncWindowsTerminalProfile(store.config, store.baseDir, dark);
+            }
+          } catch (_) {}
+        }
+        sendToRenderer('theme:state-updated', getFullState());
+      });
+    }
 
     themeManager.on('changed', async () => {
       if (store.config.enabled) await applyCurrentState();

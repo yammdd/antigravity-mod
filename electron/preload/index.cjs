@@ -52,8 +52,9 @@ contextBridge.exposeInMainWorld('themeAPI', {
   exportCliPreset: () => ipcRenderer.invoke('cli:export-preset'),
   importCliPreset: () => ipcRenderer.invoke('cli:import-preset'),
 
-  // IDE & App integration
+  // IDE, App & CLI diagnostics & integration
   inspectDom: () => ipcRenderer.invoke('ide:inspect-dom'),
+  runDiagnostics: () => ipcRenderer.invoke('diagnostics:run-all'),
   configureArgv: (enable = true) => ipcRenderer.invoke('ide:configure-argv', enable),
   launchTarget: (target = 'ide') => ipcRenderer.invoke('ide:launch-target', target),
   toggleAutoStart: (enable) => ipcRenderer.invoke('app:toggle-autostart', enable),

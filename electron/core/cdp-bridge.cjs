@@ -6,6 +6,7 @@ const http = require('http');
 const os = require('os');
 const path = require('path');
 const { buildInjectScript, buildRemoveScript } = require('../injector/runtime-script.cjs');
+const { buildDomCompatProbeScript } = require('./host-selectors.cjs');
 
 /**
  * Multi-surface non-invasive CDP bridge.
@@ -453,6 +454,23 @@ class CdpBridge extends EventEmitter {
       list.push({ id: s.id, port: s.port, kind: s.kind, info: res?.result?.value || null });
     }
     return list;
+  }
+
+  async runCompatibilityCheck() {
+    const reports = [];
+    for (const s of this.sessions.values()) {
+      if (!s.ready) continue;
+      const probeExpr = buildDomCompatProbeScript(s.kind);
+      const res = await s.evaluate(probeExpr, true);
+      reports.push({
+        id: s.id,
+        port: s.port,
+        kind: s.kind,
+        title: s.title || s.kind,
+        probe: res?.result?.value || null,
+      });
+    }
+    return reports;
   }
 
   start() {

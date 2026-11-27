@@ -4,6 +4,9 @@ const DEFAULT_CLI_CONFIG = Object.freeze({
   schemaVersion: 2,
   enabled: false,
   presetId: 'tokyo-night', // 'custom' | 'tokyo-night' | 'catppuccin-mocha' | 'rose-pine' | 'nord-frost' | 'gruvbox-dark' | 'cyberpunk-neon' | 'dracula' | 'github-light'
+  autoFollowOs: false,
+  darkPresetId: 'catppuccin-mocha',
+  lightPresetId: 'github-light',
   colorScheme: 'terminal',
   runningLightSpeed: 'medium',
   altScreenMode: 'auto', // 'auto' | 'always' | 'never'
@@ -51,7 +54,7 @@ const DEFAULT_CONFIG = Object.freeze({
   onlineThemeUrls: [],
 
   // Visual Token Studio (--ag-* tokens)
-  colorMode: 'dark', // 'dark' | 'light'
+  colorMode: 'dark', // 'dark' | 'light' | 'auto'
   accentColor: '#3b82f6',
   surfaceTint: 'graphite', // 'graphite' | 'ink' | 'warm'
   uiFont: 'inter',
@@ -61,6 +64,7 @@ const DEFAULT_CONFIG = Object.freeze({
   chatFontSize: 14,
   chatWidth: 'standard', // 'compact' | 'standard' | 'wide'
   chatBubbleStyle: 'glass', // 'glass' | 'minimal' | 'outlined' | 'floating'
+  foldLongCodeBlocks: false,
   cornerRadius: 10,
   borderStyle: 'hairline', // 'hairline' | 'none' | 'accent'
   glassBlur: 12, // frosted blur px for popups, menus, composer, and glass cards
@@ -102,7 +106,7 @@ const DEFAULT_CONFIG = Object.freeze({
 });
 
 const ENUMS = {
-  colorMode: new Set(['dark', 'light']),
+  colorMode: new Set(['dark', 'light', 'auto']),
   surfaceTint: new Set(['graphite', 'ink', 'warm']),
   uiFont: new Set(['inter', 'geist', 'be_vietnam', 'ibm_plex', 'system', 'custom']),
   monoFont: new Set(['jetbrains', 'cascadia', 'ibm_mono', 'system', 'custom']),
@@ -126,18 +130,21 @@ const ENUMS = {
   videoFit: new Set(['cover', 'contain']),
 };
 
+const CLI_PRESET_IDS = new Set([
+  'tokyo-night',
+  'catppuccin-mocha',
+  'rose-pine',
+  'nord-frost',
+  'gruvbox-dark',
+  'cyberpunk-neon',
+  'dracula',
+  'github-light',
+]);
+
 const CLI_ENUMS = {
-  presetId: new Set([
-    'custom',
-    'tokyo-night',
-    'catppuccin-mocha',
-    'rose-pine',
-    'nord-frost',
-    'gruvbox-dark',
-    'cyberpunk-neon',
-    'dracula',
-    'github-light',
-  ]),
+  presetId: new Set(['custom', ...CLI_PRESET_IDS]),
+  darkPresetId: CLI_PRESET_IDS,
+  lightPresetId: CLI_PRESET_IDS,
   colorScheme: new Set([
     'terminal',
     'dark',
@@ -336,8 +343,15 @@ function toHexColor(r, g, b) {
   return `#${h(r)}${h(g)}${h(b)}`;
 }
 
-function getSurfaceRamp(config) {
-  const mode = config?.colorMode === 'light' ? 'light' : 'dark';
+function resolveEffectiveColorMode(config, systemDark = true) {
+  if (config?.colorMode === 'auto') {
+    return systemDark ? 'dark' : 'light';
+  }
+  return config?.colorMode === 'light' ? 'light' : 'dark';
+}
+
+function getSurfaceRamp(config, systemDark = true) {
+  const mode = resolveEffectiveColorMode(config, systemDark);
   const tint = SURFACE_RAMPS[mode][config?.surfaceTint] ? config.surfaceTint : 'graphite';
   return SURFACE_RAMPS[mode][tint];
 }
@@ -352,5 +366,6 @@ module.exports = {
   parseHexTriple,
   hexToRgbString,
   toHexColor,
+  resolveEffectiveColorMode,
   getSurfaceRamp,
 };
