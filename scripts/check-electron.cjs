@@ -2,19 +2,22 @@
 
 const assert = require('assert');
 const fs = require('fs');
+const http = require('http');
 const os = require('os');
 const path = require('path');
 
-const { DEFAULT_CONFIG, sanitizeConfigPatch } = require('../electron/core/defaults.cjs');
+const { DEFAULT_CONFIG, resolveEffectiveColorMode, sanitizeConfigPatch } = require('../electron/core/defaults.cjs');
 const { ThemeManager, parseThemeMetadata } = require('../electron/core/theme-manager.cjs');
 const { compileStylesheet, buildExportThemeCss } = require('../electron/injector/css-compiler.cjs');
 const { buildInjectScript, buildRemoveScript } = require('../electron/injector/runtime-script.cjs');
 const { LocalMediaServer } = require('../electron/core/media-server.cjs');
+const { HOST_SELECTOR_CONTRACTS, buildDomCompatProbeScript } = require('../electron/core/host-selectors.cjs');
 const {
   CLI_THEME_PRESETS,
   CLI_SHADER_PRESETS,
   stripJsonc,
   resolvePersistentShaderPath,
+  resolveActiveCliPresetId,
   buildAnsiPalette,
   formatStatusLineCommand,
   generateStatusLineScript,
@@ -22,6 +25,7 @@ const {
   syncExternalTerminalConfig,
   exportCliPresetJson,
   parseCliPresetJson,
+  runCliDiagnostics,
 } = require('../electron/core/cli-themer.cjs');
 const { createZipFromDir, extractZipSafe } = require('../electron/core/zip-pack.cjs');
 const { compareSemver } = require('../electron/core/updater.cjs');
@@ -308,7 +312,98 @@ async function run() {
     assert.strictEqual(compareSemver('v1.1.0', '1.1.0'), 0);
     assert.strictEqual(compareSemver('1.0.9', '1.1.0'), -1);
 
-    console.log('ALL 3-SURFACE CORE TESTS PASSED (IDE + App + CLI + v1.1.0)');
+    // 10. v1.2.0 Architecture & Security Fitness Gates (IDE + App + CLI)
+    const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
+    const runtimeCode = stripComments(
+      fs.readFileSync(path.resolve(__dirname, '..', 'electron', 'injector', 'runtime-script.cjs'), 'utf8')
+    );
+    assert.ok(!/\b(innerHTML|outerHTML|insertAdjacentHTML)\b/.test(runtimeCode), 'Fitness Gate: runtime-script.cjs must have 0 innerHTML/outerHTML/insertAdjacentHTML');
+
+    const ideIntCode = stripComments(
+      fs.readFileSync(path.resolve(__dirname, '..', 'electron', 'main', 'ide-integration.cjs'), 'utf8')
+    );
+    assert.ok(!/taskkill/i.test(ideIntCode), 'Fitness Gate: ide-integration.cjs must never force-kill via taskkill');
+
+    const checkCssFitness = (css, label) => {
+      assert.ok(!css.includes(':has('), `Fitness Gate (${label}): compiled CSS must not use :has()`);
+      let depth = 0;
+      for (const ch of css) {
+        if (ch === '{') depth++;
+        else if (ch === '}') depth--;
+        assert.ok(depth >= 0, `Fitness Gate (${label}): unbalanced closing brace`);
+      }
+      assert.strictEqual(depth, 0, `Fitness Gate (${label}): unbalanced CSS braces (depth=${depth})`);
+    };
+    const foldedAppCss = compileStylesheet({
+      config: { ...DEFAULT_CONFIG, colorMode: 'auto', foldLongCodeBlocks: true },
+      targetKind: 'app',
+      activeWallpaper: null,
+      systemDark: false,
+    });
+    checkCssFitness(compiledIde, 'ide');
+    checkCssFitness(compiledApp, 'app');
+    checkCssFitness(foldedAppCss, 'app-auto-light-folded');
+    assert.ok(foldedAppCss.includes('color-scheme: light'), 'Auto OS light mode must compile light palette');
+    assert.ok(foldedAppCss.includes('[data-testid="agent-input-box"]'), 'App CSS must include v2.35 composer selector');
+    assert.ok(foldedAppCss.includes('[data-testid="step-plan"]'), 'App CSS must include v2.35 step-plan selector');
+    assert.ok(foldedAppCss.includes('.ag-code-fold-wrap'), 'foldLongCodeBlocks must compile code folding styles');
+
+    const foldedScript = buildInjectScript({
+      config: { ...DEFAULT_CONFIG, foldLongCodeBlocks: true },
+      cssIde: compiledIde,
+      cssIdeChat: foldedAppCss,
+      cssApp: foldedAppCss,
+    });
+    assert.ok(foldedScript.includes('ag-code-fold-btn'), 'Runtime script must include opt-in code block folding');
+    assert.ok(foldedScript.includes('isWindowIdle'), 'Runtime script must include 0-FPS blur/hidden idle gating');
+    new Function(foldedScript);
+
+    // DNS rebinding Host & Origin guard on LocalMediaServer
+    const rawHttpStatus = (reqHeaders) =>
+      new Promise((resolve, reject) => {
+        const u = new URL(fakeFontUrl);
+        const req = http.request(
+          { hostname: '127.0.0.1', port: Number(u.port), path: u.pathname, method: 'GET', headers: reqHeaders },
+          (res) => {
+            res.resume();
+            res.on('end', () => resolve(res.statusCode));
+          }
+        );
+        req.on('error', reject);
+        req.end();
+      });
+    assert.strictEqual(await rawHttpStatus({ Host: 'evil.example:80' }), 403, 'LocalMediaServer must reject non-loopback Host header (DNS rebinding guard)');
+    assert.strictEqual(await rawHttpStatus({ Host: `127.0.0.1:${port}`, Origin: 'https://evil.example' }), 403, 'LocalMediaServer must reject untrusted cross-site Origin');
+    assert.strictEqual(await rawHttpStatus({ Host: `127.0.0.1:${port}`, Origin: 'vscode-file://vscode-app' }), 200, 'LocalMediaServer must allow vscode-file:// origin with valid token');
+
+    // Auto OS colorMode & CLI autoFollowOs
+    assert.strictEqual(sanitizeConfigPatch({ colorMode: 'auto', foldLongCodeBlocks: true }).colorMode, 'auto');
+    assert.strictEqual(resolveEffectiveColorMode({ colorMode: 'auto' }, true), 'dark');
+    assert.strictEqual(resolveEffectiveColorMode({ colorMode: 'auto' }, false), 'light');
+    const autoCliCfg = {
+      ...DEFAULT_CONFIG,
+      cli: {
+        ...DEFAULT_CONFIG.cli,
+        autoFollowOs: true,
+        darkPresetId: 'catppuccin-mocha',
+        lightPresetId: 'github-light',
+      },
+    };
+    assert.strictEqual(resolveActiveCliPresetId(autoCliCfg, true), 'catppuccin-mocha');
+    assert.strictEqual(resolveActiveCliPresetId(autoCliCfg, false), 'github-light');
+    assert.strictEqual(buildAnsiPalette(autoCliCfg, true).background, '#1e1e2e');
+    assert.strictEqual(buildAnsiPalette(autoCliCfg, false).background, '#ffffff');
+
+    // 3-Surface Selector Registry & CLI Diagnostics
+    assert.ok(HOST_SELECTOR_CONTRACTS.ide.length >= 6, 'IDE selector contract registry must cover core workbench areas');
+    assert.ok(HOST_SELECTOR_CONTRACTS.shell.length >= 7, 'Shell selector contract registry must cover App/Chat areas');
+    new Function(buildDomCompatProbeScript('ide'));
+    new Function(buildDomCompatProbeScript('app'));
+    new Function(buildDomCompatProbeScript('ide-chat'));
+    const cliDiag = runCliDiagnostics(autoCliCfg, tmpDir, true);
+    assert.ok(Array.isArray(cliDiag.checks) && cliDiag.checks.length >= 5, 'CLI diagnostics must report structured health checks');
+
+    console.log('ALL 3-SURFACE CORE TESTS & v1.2.0 FITNESS GATES PASSED (IDE + App + CLI)');
   } finally {
     srv.stop();
     fs.rmSync(tmpDir, { recursive: true, force: true });
