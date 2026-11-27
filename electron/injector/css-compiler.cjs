@@ -21,48 +21,48 @@ function alpha(pct) {
   return Math.max(0, Math.min(1, Number(pct) / 100)).toFixed(2);
 }
 
-function buildAnimationCss(preset, accentRgb) {
-  if (!preset || preset === 'none') return '';
+function buildAnimationCss(preset, accentRgb, dynamicUiMotion = false) {
+  const parts = [];
 
   if (preset === 'ken-burns') {
-    return `@keyframes agKenBurns {
+    parts.push(`@keyframes agKenBurns {
   0% { transform: scale(1.0) translate3d(0%, 0%, 0); }
   50% { transform: scale(1.08) translate3d(-1.5%, -1%, 0); }
   100% { transform: scale(1.0) translate3d(0%, 0%, 0); }
 }
 #ag-theme-bg-img { animation: agKenBurns 30s ease-in-out infinite; will-change: transform; }
-@media (prefers-reduced-motion: reduce) { #ag-theme-bg-img { animation: none !important; } }`;
-  }
-
-  if (preset === 'tab-slide') {
-    return `@keyframes agFadeRise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-.monaco-workbench .part.editor .tab, .agy-shell [data-testid="agent-response"] {
-  transition: background-color 150ms cubic-bezier(0.22,1,0.36,1), border-color 150ms cubic-bezier(0.22,1,0.36,1) !important;
-}
-.agy-shell [data-testid="agent-response"] { animation: agFadeRise 220ms cubic-bezier(0.22,1,0.36,1); }
-@media (prefers-reduced-motion: reduce) { .agy-shell [data-testid="agent-response"] { animation: none !important; } }`;
+@media (prefers-reduced-motion: reduce) { #ag-theme-bg-img { animation: none !important; } }`);
   }
 
   if (preset === 'ambient-shift') {
-    return `@keyframes agAmbientShift {
+    parts.push(`@keyframes agAmbientShift {
   0%, 100% { filter: brightness(1) saturate(1); }
   50% { filter: brightness(1.07) saturate(1.1); }
 }
 #ag-theme-bg-stage { animation: agAmbientShift 16s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { #ag-theme-bg-stage { animation: none !important; } }`;
+@media (prefers-reduced-motion: reduce) { #ag-theme-bg-stage { animation: none !important; } }`);
   }
 
-  if (preset === 'cursor-pulse') {
-    return `@keyframes agFocusPulse {
+  if (dynamicUiMotion || preset === 'tab-slide') {
+    parts.push(`@keyframes agFadeRise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.monaco-workbench .part.editor .tab, .agy-shell [data-testid="agent-response"] {
+  transition: background-color 150ms cubic-bezier(0.22,1,0.36,1), border-color 150ms cubic-bezier(0.22,1,0.36,1) !important;
+}
+.agy-shell [data-testid="agent-response"] { animation: agFadeRise 220ms cubic-bezier(0.22,1,0.36,1); }
+@media (prefers-reduced-motion: reduce) { .agy-shell [data-testid="agent-response"] { animation: none !important; } }`);
+  }
+
+  if (dynamicUiMotion || preset === 'cursor-pulse') {
+    parts.push(`@keyframes agFocusPulse {
   0%, 100% { box-shadow: 0 0 0 1px rgba(${accentRgb}, 0.35); }
   50% { box-shadow: 0 0 0 2px rgba(${accentRgb}, 0.65); }
 }
-.surface-composer:focus-within { animation: agFocusPulse 2.8s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .surface-composer:focus-within { animation: none !important; } }`;
+.surface-composer:focus-within, .agy-shell [data-testid="agent-input-box"]:focus-within { animation: agFocusPulse 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .surface-composer:focus-within, .agy-shell [data-testid="agent-input-box"]:focus-within { animation: none !important; } }`);
   }
 
-  if (preset === 'aurora-edge') {
-    return `@keyframes agEdgeGlide {
+  if (dynamicUiMotion || preset === 'aurora-edge') {
+    parts.push(`@keyframes agEdgeGlide {
   0% { background-position: 0% 50%; }
   100% { background-position: 200% 50%; }
 }
@@ -78,10 +78,10 @@ function buildAnimationCss(preset, accentRgb) {
 }
 @media (prefers-reduced-motion: reduce) {
   .monaco-workbench .part.titlebar::after, .agy-shell [class*="@container/titlebar"]::after { animation: none !important; }
-}`;
+}`);
   }
 
-  return '';
+  return parts.join('\n\n');
 }
 
 /**
@@ -895,8 +895,8 @@ ${hasWallpaper ? `.monaco-workbench .part.editor,
     }
   }
 
-  // 5. Animation preset
-  const animCss = buildAnimationCss(config.animationPreset, accentRgb);
+  // 5. Animation preset + opt-in Dynamic UI motion
+  const animCss = buildAnimationCss(config.animationPreset, accentRgb, Boolean(config.dynamicUiMotion));
   if (animCss) sections.push(animCss);
 
   // 6. User .theme.css + Theme Packs + Online CSS + QuickCSS

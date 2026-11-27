@@ -69,8 +69,11 @@ const DEFAULT_CONFIG = Object.freeze({
   borderStyle: 'hairline', // 'hairline' | 'none' | 'accent'
   glassBlur: 12, // frosted blur px for popups, menus, composer, and glass cards
 
-  // Animation preset
-  animationPreset: 'none',
+  // Animation preset & live dynamic engine controls
+  animationPreset: 'aurora-waves',
+  animationSpeed: 1, // 0.4 .. 2.2
+  animationIntensity: 100, // 25 .. 150 (%)
+  dynamicUiMotion: true,
 
   // Chrome & Deep Workbench presets
   tabsStyle: 'default', // 'default' | 'underline' | 'minimal'
@@ -115,8 +118,17 @@ const ENUMS = {
   borderStyle: new Set(['hairline', 'none', 'accent']),
   animationPreset: new Set([
     'none',
+    'aurora-waves',
+    'shooting-stars',
+    'constellation',
+    'floating-bokeh',
+    'fireflies',
+    'snow',
     'sakura',
     'rain',
+    'water-ripples',
+    'matrix-rain',
+    'cyber-grid',
     'stars',
     'ken-burns',
     'tab-slide',
@@ -191,6 +203,8 @@ const RANGES = {
   chatFontSize: [12, 18],
   cornerRadius: [0, 20],
   glassBlur: [0, 24],
+  animationSpeed: [0.4, 2.2],
+  animationIntensity: [25, 150],
   wallpaperBlur: [0, 28],
   dimming: [0, 95],
   sidebarOpacity: [0, 100],

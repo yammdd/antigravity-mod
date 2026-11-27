@@ -196,23 +196,46 @@ async function run() {
     const parsedExport = parseThemeMetadata(exported, 'exported.theme.css');
     assert.strictEqual(parsedExport.name, 'Exported');
 
-    // 5. Runtime injector script syntax, live FX presets & Trusted-Types safety
-    for (const fx of ['sakura', 'rain', 'stars', 'ken-burns']) {
+    // 5. Runtime injector script syntax, 12 live dynamic FX presets, speed/intensity & Trusted-Types safety
+    const liveFxList = [
+      'aurora-waves',
+      'shooting-stars',
+      'constellation',
+      'floating-bokeh',
+      'fireflies',
+      'snow',
+      'sakura',
+      'rain',
+      'water-ripples',
+      'matrix-rain',
+      'cyber-grid',
+      'stars',
+      'ken-burns',
+    ];
+    for (const fx of liveFxList) {
+      assert.strictEqual(sanitizeConfigPatch({ animationPreset: fx }).animationPreset, fx, `animationPreset ${fx} must be accepted`);
       const fxCss = compileStylesheet({
-        config: { ...DEFAULT_CONFIG, animationPreset: fx },
+        config: { ...DEFAULT_CONFIG, animationPreset: fx, dynamicUiMotion: true },
         targetKind: 'ide',
         activeWallpaper: null,
       });
       if (fx === 'ken-burns') assert.ok(fxCss.includes('@keyframes agKenBurns'));
+      assert.ok(fxCss.includes('@keyframes agEdgeGlide'), 'dynamicUiMotion must compile titlebar light glide');
     }
+    const clampedAnim = sanitizeConfigPatch({ animationSpeed: 9, animationIntensity: 5 });
+    assert.strictEqual(clampedAnim.animationSpeed, 2.2);
+    assert.strictEqual(clampedAnim.animationIntensity, 25);
+
     const injectCode = buildInjectScript({
-      config: { ...DEFAULT_CONFIG, animationPreset: 'sakura' },
+      config: { ...DEFAULT_CONFIG, animationPreset: 'aurora-waves', animationSpeed: 1.4, animationIntensity: 120 },
+      accentRgb: '59, 130, 246',
       cssIde: compiledIde,
       cssIdeChat: compiledApp,
       cssApp: compiledApp,
     });
     assert.ok(!injectCode.includes('innerHTML'), 'Runtime script must not use innerHTML');
     assert.ok(injectCode.includes('ag-theme-fx-canvas'), 'Runtime script should include live particle FX canvas');
+    assert.ok(injectCode.includes('shooting-stars') && injectCode.includes('cyber-grid') && injectCode.includes('aurora-waves'));
     new Function(injectCode);
     new Function(buildRemoveScript());
 

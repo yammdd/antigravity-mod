@@ -7,7 +7,7 @@ const { LocalMediaServer } = require('../core/media-server.cjs');
 const { AppStore } = require('../core/store.cjs');
 const { ThemeManager } = require('../core/theme-manager.cjs');
 const { CdpBridge } = require('../core/cdp-bridge.cjs');
-const { getSurfaceRamp } = require('../core/defaults.cjs');
+const { getSurfaceRamp, hexToRgbString } = require('../core/defaults.cjs');
 const { compileStylesheet } = require('../injector/css-compiler.cjs');
 const {
   applyAgyCliSettings,
@@ -85,6 +85,7 @@ function buildRuntimePayload() {
     systemDark,
     wallpaper: activeWallpaper,
     surfaceRgb: ramp.rgb,
+    accentRgb: hexToRgbString(config.accentColor || '#3b82f6'),
     cssIde: compileStylesheet({
       config,
       targetKind: 'ide',

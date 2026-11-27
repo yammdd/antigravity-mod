@@ -427,7 +427,21 @@ function runtimeMount(PAYLOAD) {
   function mountParticleFx() {
     var preset = cfg.animationPreset || 'none';
     var existingFx = document.getElementById('ag-theme-fx-layer');
-    var supported = preset === 'sakura' || preset === 'rain' || preset === 'stars';
+    var supportedPresets = [
+      'aurora-waves',
+      'shooting-stars',
+      'constellation',
+      'floating-bokeh',
+      'fireflies',
+      'snow',
+      'sakura',
+      'rain',
+      'water-ripples',
+      'matrix-rain',
+      'cyber-grid',
+      'stars',
+    ];
+    var supported = supportedPresets.indexOf(preset) !== -1;
     var reduced = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!supported || reduced) {
       if (existingFx) existingFx.remove();
@@ -458,8 +472,13 @@ function runtimeMount(PAYLOAD) {
     var ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    var accentRgb = PAYLOAD.accentRgb || '59, 130, 246';
+    var speed = Math.max(0.4, Math.min(2.2, Number(cfg.animationSpeed) || 1));
+    var intensity = Math.max(0.25, Math.min(1.5, (Number(cfg.animationIntensity) || 100) / 100));
     var w = 0;
     var h = 0;
+    var cols = 0;
+    var drops = [];
     var resize = function() {
       var dpr = Math.min(1.5, window.devicePixelRatio || 1);
       w = Math.max(1, window.innerWidth);
@@ -467,26 +486,96 @@ function runtimeMount(PAYLOAD) {
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (preset === 'matrix-rain') {
+        cols = Math.max(12, Math.floor(w / 22));
+        drops = [];
+        for (var c = 0; c < cols; c++) drops.push(Math.random() * (h / 18));
+      }
     };
     resize();
     window.addEventListener('resize', resize, { signal: ac.signal });
 
-    var count = preset === 'rain' ? 85 : (preset === 'sakura' ? 36 : 48);
+    var baseCount =
+      preset === 'rain' ? 85 :
+      preset === 'snow' ? 68 :
+      preset === 'constellation' ? 42 :
+      preset === 'fireflies' ? 32 :
+      preset === 'floating-bokeh' ? 18 :
+      preset === 'water-ripples' ? 10 :
+      preset === 'shooting-stars' ? 46 :
+      preset === 'sakura' ? 36 : 48;
+    var count = Math.max(6, Math.round(baseCount * Math.min(1.4, Math.max(0.4, intensity))));
     var items = [];
     for (var i = 0; i < count; i++) {
+      var depth = 0.45 + Math.random() * 0.85;
       items.push({
         x: Math.random() * w,
         y: Math.random() * h,
-        r: preset === 'sakura' ? (5 + Math.random() * 5.5) : (preset === 'rain' ? (12 + Math.random() * 16) : (1.3 + Math.random() * 2.4)),
-        vx: preset === 'rain' ? -2.4 : (preset === 'sakura' ? (0.5 + Math.random() * 0.75) : ((Math.random() - 0.5) * 0.25)),
-        vy: preset === 'rain' ? (12 + Math.random() * 7) : (preset === 'sakura' ? (0.75 + Math.random() * 0.95) : -(0.2 + Math.random() * 0.4)),
+        r: preset === 'sakura'
+          ? (5 + Math.random() * 5.5)
+          : preset === 'rain'
+            ? (12 + Math.random() * 16)
+            : preset === 'snow'
+              ? (1.5 + depth * 2.6)
+              : preset === 'floating-bokeh'
+                ? (26 + Math.random() * 54)
+                : preset === 'water-ripples'
+                  ? (Math.random() * 75)
+                  : preset === 'fireflies'
+                    ? (2.2 + Math.random() * 2.6)
+                    : preset === 'constellation' ? (1.6 + Math.random() * 1.4) : (1.1 + Math.random() * 2.0),
+        maxR: 48 + Math.random() * 76,
+        vx: preset === 'rain'
+          ? -2.4
+          : preset === 'sakura'
+            ? (0.5 + Math.random() * 0.75)
+            : preset === 'snow'
+              ? ((Math.random() - 0.35) * 0.65 * depth)
+              : preset === 'floating-bokeh'
+                ? ((Math.random() - 0.5) * 0.35)
+                : preset === 'constellation'
+                  ? ((Math.random() - 0.5) * 0.55)
+                  : preset === 'fireflies' ? ((Math.random() - 0.5) * 0.5) : ((Math.random() - 0.5) * 0.25),
+        vy: preset === 'rain'
+          ? (12 + Math.random() * 7)
+          : preset === 'sakura'
+            ? (0.75 + Math.random() * 0.95)
+            : preset === 'snow'
+              ? (0.65 + depth * 1.35)
+              : preset === 'floating-bokeh'
+                ? -(0.18 + Math.random() * 0.32)
+                : preset === 'constellation'
+                  ? ((Math.random() - 0.5) * 0.55)
+                  : preset === 'fireflies' ? ((Math.random() - 0.5) * 0.45) : -(0.2 + Math.random() * 0.4),
         phase: Math.random() * Math.PI * 2,
         rot: Math.random() * Math.PI * 2,
         vrot: (Math.random() - 0.5) * 0.035,
-        alpha: preset === 'rain' ? (0.28 + Math.random() * 0.28) : (0.55 + Math.random() * 0.35),
+        huePick: i % 3,
+        alpha: preset === 'rain' ? (0.28 + Math.random() * 0.28) : (0.45 + Math.random() * 0.4),
       });
     }
 
+    var meteors = [];
+    var spawnMeteor = function() {
+      return {
+        x: Math.random() * w * 1.15,
+        y: Math.random() * h * 0.45,
+        vx: -(10 + Math.random() * 8),
+        vy: 5 + Math.random() * 4.5,
+        len: 75 + Math.random() * 90,
+        life: 0,
+        maxLife: 26 + Math.floor(Math.random() * 24),
+        delay: Math.floor(Math.random() * 70),
+      };
+    };
+    if (preset === 'shooting-stars') {
+      var mCount = Math.max(2, Math.round(4 * intensity));
+      for (var mi = 0; mi < mCount; mi++) meteors.push(spawnMeteor());
+    }
+
+    var matrixGlyphs = '01<>{}[]/\\*+-=#λΣΔΩ';
+    var waveTick = 0;
+    var gridOffset = 0;
     var lastTs = 0;
     var scheduleFxFrame = function() {
       if (ac.signal.aborted || window.__AG_THEME_FX_RAF__) return;
@@ -501,42 +590,273 @@ function runtimeMount(PAYLOAD) {
       if (ts - lastTs < 32) return;
       lastTs = ts;
 
+      if (preset === 'matrix-rain') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
+        ctx.fillRect(0, 0, w, h);
+        ctx.font = '13px monospace';
+        var ma = Math.min(0.72, 0.42 * intensity).toFixed(2);
+        for (var mc = 0; mc < cols; mc++) {
+          var ch = matrixGlyphs.charAt(Math.floor(Math.random() * matrixGlyphs.length));
+          var mx = mc * 22 + 6;
+          var my = drops[mc] * 18;
+          ctx.fillStyle = 'rgba(' + accentRgb + ', ' + ma + ')';
+          ctx.fillText(ch, mx, my);
+          if (my > h + 20 && Math.random() > 0.96) drops[mc] = 0;
+          drops[mc] += 0.55 * speed;
+        }
+        return;
+      }
+
       ctx.clearRect(0, 0, w, h);
+
+      if (preset === 'aurora-waves') {
+        waveTick += 0.012 * speed;
+        var a1 = Math.min(0.4, 0.22 * intensity).toFixed(2);
+        var a2 = Math.min(0.32, 0.17 * intensity).toFixed(2);
+        var a3 = Math.min(0.3, 0.16 * intensity).toFixed(2);
+        var ribbons = [
+          { yBase: h * 0.28, amp: 52, freq: 0.0024, speed: 1.0, color: 'rgba(' + accentRgb + ', ' + a1 + ')' },
+          { yBase: h * 0.44, amp: 66, freq: 0.0018, speed: -0.75, color: 'rgba(20, 184, 166, ' + a2 + ')' },
+          { yBase: h * 0.62, amp: 46, freq: 0.0029, speed: 0.65, color: 'rgba(139, 92, 246, ' + a3 + ')' },
+        ];
+        for (var rb = 0; rb < ribbons.length; rb++) {
+          var rCfg = ribbons[rb];
+          var grad = ctx.createLinearGradient(0, rCfg.yBase - 110, 0, rCfg.yBase + 130);
+          grad.addColorStop(0, 'rgba(0,0,0,0)');
+          grad.addColorStop(0.5, rCfg.color);
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.moveTo(0, rCfg.yBase + 130);
+          for (var ax = 0; ax <= w + 40; ax += 40) {
+            var ay = rCfg.yBase + Math.sin(ax * rCfg.freq + waveTick * rCfg.speed + rb) * rCfg.amp + Math.cos(ax * 0.0011 - waveTick * 0.8) * 24;
+            ctx.lineTo(ax, ay);
+          }
+          ctx.lineTo(w, rCfg.yBase + 160);
+          ctx.lineTo(0, rCfg.yBase + 160);
+          ctx.closePath();
+          ctx.fill();
+        }
+        return;
+      }
+
+      if (preset === 'cyber-grid') {
+        gridOffset = (gridOffset + 0.014 * speed) % 1;
+        var horizon = h * 0.56;
+        var gridH = h - horizon;
+        var lineAlpha = Math.min(0.42, 0.22 * intensity);
+        var hGlow = ctx.createLinearGradient(0, horizon - 50, 0, horizon + 60);
+        hGlow.addColorStop(0, 'rgba(' + accentRgb + ', 0)');
+        hGlow.addColorStop(0.5, 'rgba(' + accentRgb + ', ' + (lineAlpha * 0.85).toFixed(2) + ')');
+        hGlow.addColorStop(1, 'rgba(' + accentRgb + ', 0)');
+        ctx.fillStyle = hGlow;
+        ctx.fillRect(0, horizon - 50, w, 110);
+
+        ctx.strokeStyle = 'rgba(' + accentRgb + ', ' + lineAlpha.toFixed(2) + ')';
+        ctx.lineWidth = 1;
+        var vLines = 18;
+        var cx = w * 0.5;
+        for (var vi = -vLines; vi <= vLines; vi++) {
+          var topX = cx + vi * (w / 28);
+          var botX = cx + vi * (w / 5.2);
+          ctx.beginPath();
+          ctx.moveTo(topX, horizon);
+          ctx.lineTo(botX, h);
+          ctx.stroke();
+        }
+        var hLines = 14;
+        for (var hi = 0; hi < hLines; hi++) {
+          var t = (hi + gridOffset) / hLines;
+          var y = horizon + Math.pow(t, 2.2) * gridH;
+          ctx.strokeStyle = 'rgba(' + accentRgb + ', ' + (lineAlpha * t).toFixed(2) + ')';
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+        return;
+      }
+
+      if (preset === 'constellation') {
+        var maxDist = 142;
+        for (var ci = 0; ci < items.length; ci++) {
+          var a = items[ci];
+          a.x += a.vx * speed;
+          a.y += a.vy * speed;
+          if (a.x < 0 || a.x > w) a.vx *= -1;
+          if (a.y < 0 || a.y > h) a.vy *= -1;
+          for (var cj = ci + 1; cj < items.length; cj++) {
+            var b = items[cj];
+            var dx = a.x - b.x;
+            var dy = a.y - b.y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < maxDist) {
+              var la = Math.min(0.45, (1 - dist / maxDist) * 0.28 * intensity);
+              ctx.strokeStyle = 'rgba(' + accentRgb + ', ' + la.toFixed(2) + ')';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
+          }
+          ctx.fillStyle = 'rgba(' + accentRgb + ', ' + Math.min(0.95, a.alpha * intensity).toFixed(2) + ')';
+          ctx.beginPath();
+          ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        return;
+      }
+
+      if (preset === 'shooting-stars') {
+        for (var si = 0; si < items.length; si++) {
+          var st = items[si];
+          st.phase += 0.025 * speed;
+          var sa = Math.min(0.9, st.alpha * intensity * (0.4 + 0.6 * Math.sin(st.phase)));
+          ctx.fillStyle = 'rgba(224, 242, 254, ' + sa.toFixed(2) + ')';
+          ctx.beginPath();
+          ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        for (var mj = 0; mj < meteors.length; mj++) {
+          var m = meteors[mj];
+          if (m.delay > 0) {
+            m.delay -= speed;
+            continue;
+          }
+          m.x += m.vx * speed;
+          m.y += m.vy * speed;
+          m.life += speed;
+          var prog = m.life / m.maxLife;
+          var ma2 = Math.min(0.95, Math.sin(Math.min(1, prog) * Math.PI) * 0.85 * intensity);
+          if (ma2 > 0.02) {
+            var mag = Math.sqrt(m.vx * m.vx + m.vy * m.vy) || 1;
+            var tx = m.x - (m.vx / mag) * m.len;
+            var ty = m.y - (m.vy / mag) * m.len;
+            var mg = ctx.createLinearGradient(m.x, m.y, tx, ty);
+            mg.addColorStop(0, 'rgba(255, 255, 255, ' + ma2.toFixed(2) + ')');
+            mg.addColorStop(0.3, 'rgba(' + accentRgb + ', ' + (ma2 * 0.7).toFixed(2) + ')');
+            mg.addColorStop(1, 'rgba(' + accentRgb + ', 0)');
+            ctx.strokeStyle = mg;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            ctx.lineTo(tx, ty);
+            ctx.stroke();
+          }
+          if (m.life >= m.maxLife || m.x < -140 || m.y > h + 140) {
+            meteors[mj] = spawnMeteor();
+          }
+        }
+        return;
+      }
+
+      if (preset === 'water-ripples') {
+        for (var wi = 0; wi < items.length; wi++) {
+          var rp = items[wi];
+          rp.r += 0.95 * speed;
+          if (rp.r >= rp.maxR) {
+            rp.r = 2;
+            rp.x = Math.random() * w;
+            rp.y = Math.random() * h;
+            rp.maxR = 48 + Math.random() * 82;
+          }
+          var ra = Math.min(0.55, (1 - rp.r / rp.maxR) * 0.36 * intensity);
+          ctx.strokeStyle = 'rgba(' + accentRgb + ', ' + ra.toFixed(2) + ')';
+          ctx.lineWidth = 1.25;
+          ctx.beginPath();
+          ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        return;
+      }
+
+      if (preset === 'floating-bokeh') {
+        var bokehColors = [accentRgb, '56, 189, 248', '167, 139, 250'];
+        for (var bi = 0; bi < items.length; bi++) {
+          var bk = items[bi];
+          bk.phase += 0.015 * speed;
+          bk.x += (bk.vx + Math.sin(bk.phase) * 0.25) * speed;
+          bk.y += bk.vy * speed;
+          if (bk.y < -bk.r * 2) { bk.y = h + bk.r; bk.x = Math.random() * w; }
+          if (bk.x < -bk.r * 2) bk.x = w + bk.r;
+          if (bk.x > w + bk.r * 2) bk.x = -bk.r;
+          var col = bokehColors[bk.huePick % bokehColors.length];
+          var ba = Math.min(0.28, (0.09 + 0.06 * Math.sin(bk.phase)) * intensity);
+          var bg = ctx.createRadialGradient(bk.x, bk.y, bk.r * 0.1, bk.x, bk.y, bk.r);
+          bg.addColorStop(0, 'rgba(' + col + ', ' + ba.toFixed(2) + ')');
+          bg.addColorStop(0.7, 'rgba(' + col + ', ' + (ba * 0.45).toFixed(2) + ')');
+          bg.addColorStop(1, 'rgba(' + col + ', 0)');
+          ctx.fillStyle = bg;
+          ctx.beginPath();
+          ctx.arc(bk.x, bk.y, bk.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        return;
+      }
+
       for (var j = 0; j < items.length; j++) {
         var p = items[j];
-        p.phase += 0.025;
+        p.phase += 0.025 * speed;
+        var pa = Math.min(0.95, p.alpha * intensity);
         if (preset === 'sakura') {
-          p.x += p.vx + Math.sin(p.phase) * 0.55;
-          p.y += p.vy;
-          p.rot += p.vrot;
+          p.x += (p.vx + Math.sin(p.phase) * 0.55) * speed;
+          p.y += p.vy * speed;
+          p.rot += p.vrot * speed;
           if (p.y > h + 16) { p.y = -12; p.x = Math.random() * w; }
           if (p.x > w + 16) p.x = -12;
           ctx.save();
           ctx.translate(p.x, p.y);
           ctx.rotate(p.rot);
-          ctx.fillStyle = 'rgba(249, 168, 212, ' + p.alpha.toFixed(2) + ')';
+          ctx.fillStyle = 'rgba(249, 168, 212, ' + pa.toFixed(2) + ')';
           ctx.beginPath();
           ctx.ellipse(0, 0, p.r, p.r * 0.58, 0, 0, Math.PI * 2);
           ctx.fill();
           ctx.restore();
         } else if (preset === 'rain') {
-          p.x += p.vx;
-          p.y += p.vy;
+          p.x += p.vx * speed;
+          p.y += p.vy * speed;
           if (p.y > h + 20) { p.y = -20; p.x = Math.random() * (w + 80); }
           if (p.x < -20) p.x = w + 10;
-          ctx.strokeStyle = 'rgba(186, 230, 253, ' + p.alpha.toFixed(2) + ')';
+          ctx.strokeStyle = 'rgba(186, 230, 253, ' + pa.toFixed(2) + ')';
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(p.x - 3, p.y + p.r);
           ctx.stroke();
+        } else if (preset === 'snow') {
+          p.x += (p.vx + Math.sin(p.phase * 0.8) * 0.45) * speed;
+          p.y += p.vy * speed;
+          if (p.y > h + 10) { p.y = -10; p.x = Math.random() * w; }
+          if (p.x > w + 10) p.x = -8;
+          if (p.x < -10) p.x = w + 8;
+          ctx.fillStyle = 'rgba(241, 245, 249, ' + (pa * 0.85).toFixed(2) + ')';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (preset === 'fireflies') {
+          p.x += (p.vx + Math.sin(p.phase * 0.9) * 0.4) * speed;
+          p.y += (p.vy + Math.cos(p.phase * 0.7) * 0.35) * speed;
+          if (p.x < -16) p.x = w + 16;
+          if (p.x > w + 16) p.x = -16;
+          if (p.y < -16) p.y = h + 16;
+          if (p.y > h + 16) p.y = -16;
+          var glow = pa * (0.35 + 0.65 * Math.abs(Math.sin(p.phase * 1.2)));
+          var fg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4.5);
+          fg.addColorStop(0, 'rgba(253, 224, 71, ' + glow.toFixed(2) + ')');
+          fg.addColorStop(0.45, 'rgba(251, 191, 36, ' + (glow * 0.38).toFixed(2) + ')');
+          fg.addColorStop(1, 'rgba(251, 191, 36, 0)');
+          ctx.fillStyle = fg;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * 4.5, 0, Math.PI * 2);
+          ctx.fill();
         } else {
-          p.x += p.vx;
-          p.y += p.vy;
+          p.x += p.vx * speed;
+          p.y += p.vy * speed;
           if (p.y < -8) { p.y = h + 8; p.x = Math.random() * w; }
           if (p.x < -8) p.x = w + 8;
           if (p.x > w + 8) p.x = -8;
-          var pulse = p.alpha * (0.55 + 0.45 * Math.sin(p.phase * 1.4));
+          var pulse = pa * (0.55 + 0.45 * Math.sin(p.phase * 1.4));
           ctx.fillStyle = 'rgba(224, 242, 254, ' + pulse.toFixed(2) + ')';
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
