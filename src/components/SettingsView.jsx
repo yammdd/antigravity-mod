@@ -4,7 +4,8 @@ import ToggleRow from './ui/ToggleRow.jsx';
 
 export default function SettingsView({
   t,
-  appVersion = '1.1.0',
+  appVersion = '1.2.0',
+  systemDark = true,
   config,
   cdpStatus,
   argvStatus,
@@ -19,9 +20,11 @@ export default function SettingsView({
   onImportBackup,
   onResetConfig,
   onCheckForUpdates,
+  onRunDiagnostics,
   onOpenExternal,
 }) {
-  const [domReport, setDomReport] = useState(null);
+  const [diagReport, setDiagReport] = useState(null);
+  const [showRawJson, setShowRawJson] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
@@ -37,12 +40,16 @@ export default function SettingsView({
     }
   };
 
-  const handleInspect = async () => {
-    if (!window.themeAPI) return;
+  const handleRunDiagnostics = async () => {
     setInspecting(true);
     try {
-      const res = await window.themeAPI.inspectDom();
-      setDomReport(res);
+      if (onRunDiagnostics) {
+        const res = await onRunDiagnostics();
+        setDiagReport(res);
+      } else if (window.themeAPI) {
+        const res = await window.themeAPI.inspectDom();
+        setDiagReport({ desktopTargets: res, cli: null });
+      }
     } finally {
       setInspecting(false);
     }
@@ -80,6 +87,10 @@ export default function SettingsView({
               </span>
             </div>
             <div className="meta-row">
+              <span>OS appearance</span>
+              <span className="meta-value mono">{systemDark ? 'Dark' : 'Light'}</span>
+            </div>
+            <div className="meta-row">
               <span>Loopback media server</span>
               <span className="meta-value mono">127.0.0.1:{mediaPort || '—'}</span>
             </div>
@@ -101,7 +112,7 @@ export default function SettingsView({
               className="btn"
               disabled={busyAction === 'launch-ide'}
               onClick={() => onLaunchTarget('ide')}
-              title={executables?.ide || 'Relaunch Antigravity IDE with CDP'}
+              title={executables?.ide || 'Launch Antigravity IDE with CDP (safe, no force-kill)'}
             >
               <RefreshCw size={15} strokeWidth={1.5} />
               <span>Launch IDE</span>
@@ -111,7 +122,7 @@ export default function SettingsView({
               className="btn"
               disabled={busyAction === 'launch-app'}
               onClick={() => onLaunchTarget('app')}
-              title={executables?.app || 'Launch Antigravity App 2.0 with --remote-debugging-port=0'}
+              title={executables?.app || 'Launch Antigravity App with --remote-debugging-port=0'}
             >
               <RefreshCw size={15} strokeWidth={1.5} />
               <span>Launch App</span>
@@ -120,31 +131,12 @@ export default function SettingsView({
               type="button"
               className="btn btn-ghost"
               disabled={inspecting}
-              onClick={handleInspect}
+              onClick={handleRunDiagnostics}
             >
               <Activity size={15} strokeWidth={1.5} />
-              <span>{inspecting ? 'Inspecting' : 'Inspect DOM'}</span>
+              <span>{inspecting ? 'Running...' : '3-Surface Diagnostics'}</span>
             </button>
           </div>
-
-          {domReport && (
-            <pre
-              className="mono"
-              style={{
-                padding: 12,
-                borderRadius: 8,
-                backgroundColor: 'var(--surface-deep)',
-                border: '1px solid var(--border)',
-                fontSize: 12,
-                color: 'var(--text-secondary)',
-                overflowX: 'auto',
-                maxHeight: 180,
-                userSelect: 'text',
-              }}
-            >
-              {JSON.stringify(domReport, null, 2)}
-            </pre>
-          )}
         </div>
 
         <div className="card">
@@ -190,6 +182,107 @@ export default function SettingsView({
           </div>
         </div>
       </div>
+
+      {diagReport && (
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">3-Surface Compatibility &amp; Health Report</div>
+              <div className="card-desc">
+                Read-only selector contract verification across Antigravity IDE, App, and agy CLI.
+              </div>
+            </div>
+            <div className="header-actions">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setShowRawJson((v) => !v)}
+              >
+                <span>{showRawJson ? 'Hide JSON' : 'Raw JSON'}</span>
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => setDiagReport(null)}>
+                <span>Clear</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="diag-panel">
+            <div className="diag-section">
+              <div className="diag-section-title">Desktop Surfaces (IDE &amp; App)</div>
+              {(!diagReport.desktopTargets || diagReport.desktopTargets.length === 0) ? (
+                <div className="diag-empty">
+                  No CDP targets attached right now. Launch Antigravity IDE or App with CDP enabled to verify live DOM selectors.
+                </div>
+              ) : (
+                diagReport.desktopTargets.map((target) => (
+                  <div key={`${target.port}:${target.id}`} className="diag-target-block">
+                    <div className="diag-target-head">
+                      <span className="mono" style={{ fontWeight: 600 }}>
+                        {target.kind.toUpperCase()} · port {target.port}
+                      </span>
+                      <span className="mono" style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+                        CSS: {target.probe?.styleInjected ? `${target.probe.styleBytes}B` : 'not mounted'}
+                        {target.probe?.backdropInjected ? ' · backdrop active' : ''}
+                      </span>
+                    </div>
+                    <div className="diag-list">
+                      {(target.probe?.checks || []).map((c) => (
+                        <div key={c.id} className="diag-row">
+                          <span className={`diag-badge ${String(c.status || 'info').toLowerCase()}`}>
+                            {c.status}
+                          </span>
+                          <span className="diag-label">{c.label}</span>
+                          <span className="diag-detail mono">
+                            tier {c.tier} · {c.hits} node{c.hits === 1 ? '' : 's'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {diagReport.cli && (
+              <div className="diag-section">
+                <div className="diag-section-title">
+                  agy CLI ({diagReport.cli.summary})
+                </div>
+                <div className="diag-list">
+                  {(diagReport.cli.checks || []).map((c) => (
+                    <div key={c.id} className="diag-row">
+                      <span className={`diag-badge ${String(c.status || 'info').toLowerCase()}`}>
+                        {c.status}
+                      </span>
+                      <span className="diag-label">{c.label}</span>
+                      <span className="diag-detail mono">{c.detail}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showRawJson && (
+              <pre
+                className="mono"
+                style={{
+                  padding: 12,
+                  borderRadius: 8,
+                  backgroundColor: 'var(--surface-deep)',
+                  border: '1px solid var(--border)',
+                  fontSize: 11.5,
+                  color: 'var(--text-secondary)',
+                  overflowX: 'auto',
+                  maxHeight: 240,
+                  userSelect: 'text',
+                }}
+              >
+                {JSON.stringify(diagReport, null, 2)}
+              </pre>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid-2">
         <div className="card">

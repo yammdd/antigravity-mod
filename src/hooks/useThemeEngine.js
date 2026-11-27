@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const BROWSER_FALLBACK_STATE = {
+  appVersion: '1.2.0',
+  systemDark: true,
   config: {
     setupCompleted: false,
     enabled: true,
@@ -21,6 +23,7 @@ const BROWSER_FALLBACK_STATE = {
     customUiFontId: '',
     customMonoFontId: '',
     chatFontSize: 14,
+    foldLongCodeBlocks: false,
     cornerRadius: 10,
     borderStyle: 'hairline',
     animationPreset: 'none',
@@ -42,6 +45,9 @@ const BROWSER_FALLBACK_STATE = {
     cli: {
       enabled: false,
       presetId: 'tokyo-night',
+      autoFollowOs: false,
+      darkPresetId: 'catppuccin-mocha',
+      lightPresetId: 'github-light',
       colorScheme: 'terminal',
       runningLightSpeed: 'medium',
       altScreenMode: 'auto',
@@ -549,9 +555,21 @@ export function useThemeEngine() {
 
   const checkForUpdates = useCallback(async () => {
     if (!window.themeAPI) {
-      return { ok: true, currentVersion: '1.1.0', latestVersion: '1.1.0', updateAvailable: false };
+      return { ok: true, currentVersion: '1.2.0', latestVersion: '1.2.0', updateAvailable: false };
     }
     return window.themeAPI.checkForUpdates();
+  }, []);
+
+  const runDiagnostics = useCallback(async () => {
+    if (!window.themeAPI?.runDiagnostics) {
+      return {
+        timestamp: new Date().toISOString(),
+        systemDark: true,
+        desktopTargets: [],
+        cli: { ok: true, summary: 'Browser preview mode', checks: [] },
+      };
+    }
+    return window.themeAPI.runDiagnostics();
   }, []);
 
   const openExternal = useCallback((url) => {
@@ -657,6 +675,7 @@ export function useThemeEngine() {
     exportCliPreset,
     importCliPreset,
     checkForUpdates,
+    runDiagnostics,
     openExternal,
     configureArgv,
     launchTarget,

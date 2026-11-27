@@ -8,6 +8,7 @@ import { ACCENT_SWATCHES, ANIMATION_PRESETS, MONO_FONTS, UI_FONTS } from '../con
 export default function StudioView({
   t,
   config,
+  systemDark = true,
   fonts,
   onPatchConfig,
   onImportFonts,
@@ -110,7 +111,12 @@ export default function StudioView({
           <div className="card-title">Colors & Glass</div>
 
           <div className="field">
-            <span className="field-head">{t.colorMode}</span>
+            <div className="field-head">
+              <span>{t.colorMode}</span>
+              {config.colorMode === 'auto' && (
+                <span className="field-value">OS: {systemDark ? 'Dark' : 'Light'}</span>
+              )}
+            </div>
             <SegmentedControl
               full
               value={config.colorMode || 'dark'}
@@ -118,6 +124,7 @@ export default function StudioView({
               options={[
                 { id: 'dark', label: t.modeDark },
                 { id: 'light', label: t.modeLight },
+                { id: 'auto', label: 'Auto (OS)' },
               ]}
             />
           </div>
@@ -334,6 +341,13 @@ export default function StudioView({
               ]}
             />
           </div>
+
+          <ToggleRow
+            label="Fold long code blocks in Chat"
+            hint="Collapse code blocks over 22 lines in IDE Chat and Antigravity App"
+            checked={Boolean(config.foldLongCodeBlocks)}
+            onChange={(v) => onPatchConfig({ foldLongCodeBlocks: v }, true)}
+          />
         </div>
       </div>
 

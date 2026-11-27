@@ -209,6 +209,7 @@ export default function App() {
                 <PreviewCanvas
                   t={t}
                   config={config}
+                  systemDark={state.systemDark !== false}
                   activeWallpaper={activeWallpaper}
                   builtInWallpapers={builtInWallpapers}
                   wallpapers={wallpapers}
@@ -257,6 +258,7 @@ export default function App() {
                 <StudioView
                   t={t}
                   config={config}
+                  systemDark={state.systemDark !== false}
                   fonts={state.fonts || []}
                   onPatchConfig={engine.patchConfig}
                   onImportFonts={engine.importFonts}
@@ -280,7 +282,9 @@ export default function App() {
                 <CliView
                   t={t}
                   config={config}
+                  systemDark={state.systemDark !== false}
                   cliStatus={state.cliStatus}
+                  cliActivePresetId={state.cliActivePresetId || ''}
                   cliPresets={state.cliPresets || []}
                   cliBgMediaUrl={state.cliBgMediaUrl || ''}
                   builtInWallpapers={builtInWallpapers}
@@ -291,6 +295,7 @@ export default function App() {
                   onApplyCliPreset={engine.applyCliPreset}
                   onApplyCli={engine.applyCliSettings}
                   onTestCliStatusLine={engine.testCliStatusLine}
+                  onRunDiagnostics={engine.runDiagnostics}
                   onResetCli={engine.resetCliSettings}
                   onSyncWindowsTerminal={engine.syncWindowsTerminal}
                   onRestoreWindowsTerminal={engine.restoreWindowsTerminal}
@@ -306,7 +311,8 @@ export default function App() {
               {activeTab === 'settings' && (
                 <SettingsView
                   t={t}
-                  appVersion={state.appVersion || '1.1.0'}
+                  appVersion={state.appVersion || '1.2.0'}
+                  systemDark={state.systemDark !== false}
                   config={config}
                   cdpStatus={cdpStatus}
                   argvStatus={state.argvStatus}
@@ -321,6 +327,7 @@ export default function App() {
                   onImportBackup={engine.importBackup}
                   onResetConfig={engine.resetConfig}
                   onCheckForUpdates={engine.checkForUpdates}
+                  onRunDiagnostics={engine.runDiagnostics}
                   onOpenExternal={engine.openExternal}
                 />
               )}

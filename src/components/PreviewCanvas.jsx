@@ -7,6 +7,7 @@ import { hexToRgb, PREVIEW_SURFACES } from '../utils/color.js';
 export default function PreviewCanvas({
   t,
   config,
+  systemDark = true,
   activeWallpaper,
   builtInWallpapers = [],
   wallpapers = [],
@@ -16,7 +17,10 @@ export default function PreviewCanvas({
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
-  const mode = config.colorMode === 'light' ? 'light' : 'dark';
+  const mode =
+    config.colorMode === 'auto'
+      ? (systemDark ? 'dark' : 'light')
+      : (config.colorMode === 'light' ? 'light' : 'dark');
   const tint = PREVIEW_SURFACES[mode][config.surfaceTint] ? config.surfaceTint : 'graphite';
   const ramp = PREVIEW_SURFACES[mode][tint];
   const accent = config.accentColor || '#3b82f6';

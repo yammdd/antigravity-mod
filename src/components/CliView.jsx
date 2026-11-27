@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Activity,
   Check,
   ChevronDown,
   ChevronUp,
@@ -84,7 +85,9 @@ function AgyPixelLogo() {
 export default function CliView({
   t,
   config,
+  systemDark = true,
   cliStatus,
+  cliActivePresetId = '',
   cliPresets = [],
   cliBgMediaUrl = '',
   builtInWallpapers = [],
@@ -95,6 +98,7 @@ export default function CliView({
   onApplyCliPreset,
   onApplyCli,
   onTestCliStatusLine,
+  onRunDiagnostics,
   onResetCli,
   onSyncWindowsTerminal,
   onRestoreWindowsTerminal,
@@ -114,9 +118,15 @@ export default function CliView({
   const [syncingExt, setSyncingExt] = useState(false);
   const [testingSl, setTestingSl] = useState(false);
   const [testResult, setTestResult] = useState(null);
+  const [runningDiag, setRunningDiag] = useState(false);
+  const [cliDiag, setCliDiag] = useState(null);
 
   const cli = config.cli || {};
-  const activePresetId = cli.presetId || 'tokyo-night';
+  const activePresetId =
+    cliActivePresetId ||
+    (cli.autoFollowOs
+      ? (systemDark ? (cli.darkPresetId || 'catppuccin-mocha') : (cli.lightPresetId || 'github-light'))
+      : (cli.presetId || 'tokyo-night'));
   const activePreset = useMemo(
     () => cliPresets.find((p) => p.id === activePresetId) || null,
     [cliPresets, activePresetId]
@@ -199,6 +209,17 @@ export default function CliView({
       setTestResult(res);
     } finally {
       setTestingSl(false);
+    }
+  };
+
+  const handleRunCliDiag = async () => {
+    if (!onRunDiagnostics) return;
+    setRunningDiag(true);
+    try {
+      const res = await onRunDiagnostics();
+      setCliDiag(res?.cli || null);
+    } finally {
+      setRunningDiag(false);
     }
   };
 
@@ -420,6 +441,15 @@ export default function CliView({
         </div>
 
         <div className="header-actions" style={{ flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            disabled={runningDiag}
+            onClick={handleRunCliDiag}
+          >
+            <Activity size={15} strokeWidth={1.5} />
+            <span>{runningDiag ? 'Checking...' : 'CLI Diagnostics'}</span>
+          </button>
           <button type="button" className="btn btn-ghost" onClick={onResetCli}>
             <RotateCcw size={15} strokeWidth={1.5} />
             <span>{t.cliRestore}</span>
@@ -561,6 +591,36 @@ export default function CliView({
         )}
       </section>
 
+      {/* CLI Diagnostics Report (on demand) */}
+      {cliDiag && (
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">agy CLI Health Check</div>
+              <div className="card-desc">
+                {cliDiag.summary} · Active preset: <span className="mono">{cliDiag.activePresetId}</span>
+                {cliDiag.autoFollowOs ? ` (Auto OS: ${cliDiag.systemDark ? 'Dark' : 'Light'})` : ''}
+              </div>
+            </div>
+            <button type="button" className="btn btn-ghost" onClick={() => setCliDiag(null)}>
+              <X size={14} strokeWidth={1.5} />
+              <span>Dismiss</span>
+            </button>
+          </div>
+          <div className="diag-list">
+            {(cliDiag.checks || []).map((c) => (
+              <div key={c.id} className="diag-row">
+                <span className={`diag-badge ${String(c.status || 'info').toLowerCase()}`}>
+                  {c.status}
+                </span>
+                <span className="diag-label">{c.label}</span>
+                <span className="diag-detail mono">{c.detail}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Section 1: Standalone CLI Color Presets (Zero IDE Dependency) */}
       <div className="card">
         <div className="card-header">
@@ -599,7 +659,7 @@ export default function CliView({
           </div>
         </div>
 
-        <div className="cli-preset-grid">
+          <div className="cli-preset-grid">
           {cliPresets.map((preset) => {
             const selected = activePresetId === preset.id;
             const p = preset.palette;
@@ -609,7 +669,10 @@ export default function CliView({
                 key={preset.id}
                 type="button"
                 className={`cli-preset-card ${selected ? 'selected' : ''}`}
-                onClick={() => onApplyCliPreset(preset.id, pairWallpaper)}
+                onClick={() => {
+                  if (cli.autoFollowOs) patchCli({ autoFollowOs: false }, true);
+                  onApplyCliPreset(preset.id, pairWallpaper);
+                }}
               >
                 <div
                   className="cli-preset-preview mono"
@@ -640,6 +703,53 @@ export default function CliView({
               </button>
             );
           })}
+        </div>
+
+        <div style={{ paddingTop: 10, borderTop: '1px solid var(--border)' }} className="stack-sm">
+          <ToggleRow
+            label="Auto-follow OS Dark / Light theme"
+            hint={`Automatically switch CLI preset & Windows Terminal colors when your OS changes (OS: ${systemDark ? 'Dark' : 'Light'})`}
+            checked={Boolean(cli.autoFollowOs)}
+            onChange={(v) => patchCli({ autoFollowOs: v })}
+          />
+          {cli.autoFollowOs && (
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-head" htmlFor="cli-dark-preset">
+                  Dark mode preset
+                </label>
+                <select
+                  id="cli-dark-preset"
+                  className="select"
+                  value={cli.darkPresetId || 'catppuccin-mocha'}
+                  onChange={(e) => patchCli({ darkPresetId: e.target.value })}
+                >
+                  {cliPresets.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.mode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-head" htmlFor="cli-light-preset">
+                  Light mode preset
+                </label>
+                <select
+                  id="cli-light-preset"
+                  className="select"
+                  value={cli.lightPresetId || 'github-light'}
+                  onChange={(e) => patchCli({ lightPresetId: e.target.value })}
+                >
+                  {cliPresets.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.mode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {showPaletteEditor && (
