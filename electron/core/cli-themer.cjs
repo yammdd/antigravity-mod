@@ -87,7 +87,7 @@ const CLI_THEME_PRESETS = Object.freeze({
     mode: 'dark',
     accent: '#ebbcba',
     agyColorScheme: 'terminal',
-    recommendedPack: 'dusk-windmills',
+    recommendedPack: 'sakura-shrine-gif',
     palette: {
       name: 'Antigravity CLI Theme',
       background: '#191724',

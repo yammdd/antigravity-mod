@@ -1,10 +1,10 @@
 {
-  "name": "Cyberpunk Rain Room",
+  "name": "Cyberpunk Rain Room (1080p Live)",
   "author": "Community Live Wallpapers",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "category": "video",
   "source": "https://github.com/usman-369/wallpapers",
-  "description": "Animated looping video looking out over a rainy neon skyline from a dark quiet cabin.",
+  "description": "Full HD 1080p 30fps looping video looking out over a rainy neon skyline from a quiet dark cabin, paired with a high-res CLI GIF.",
   "targets": [
     "ide",
     "app",

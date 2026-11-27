@@ -119,7 +119,7 @@ class ThemeManager extends EventEmitter {
 
   seedStarterThemes() {
     if (!this.bundledThemesDir || !fs.existsSync(this.bundledThemesDir)) return;
-    const SEED_VERSION = '6';
+    const SEED_VERSION = '7';
     const markerPath = path.join(this.themesDir, '.seed-version');
     let currentVer = '';
     try {
@@ -137,6 +137,15 @@ class ThemeManager extends EventEmitter {
         'kyoto-lantern',
         'nordic-aurora',
         'alpine-morning',
+        'dusk-windmills',
+        'summer-sparkler',
+        'midnight-rain-gif',
+        'neon-rooftop-gif',
+        'firefly-ink-live',
+        'pastel-aura-live',
+        'sunset-train-live',
+        'nordic-slate.theme.css',
+        'tokyo-ink.theme.css',
       ];
       for (const oldSlug of deprecated) {
         try {

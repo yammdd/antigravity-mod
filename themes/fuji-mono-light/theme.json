@@ -1,10 +1,10 @@
 {
-  "name": "Monochrome Fuji (Light)",
+  "name": "Monochrome Fuji Light (4K)",
   "author": "Wallhaven Photography",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "category": "landscape",
   "source": "https://wallhaven.cc/w/8g5p52",
-  "description": "Clean monochrome fine-art photograph of snowy Mount Fuji built for light-mode clarity.",
+  "description": "4K UHD fine-art monochrome photograph of snowy Mount Fuji built for crisp light-mode clarity.",
   "targets": [
     "ide",
     "app",

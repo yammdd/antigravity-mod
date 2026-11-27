@@ -84,18 +84,37 @@ async function run() {
     const mgr = new ThemeManager(tmpDir, bundledDir, srv);
     const list = mgr.listLocalThemes();
     assert.ok(list.some((t) => t.id === 'obsidian-glass.theme.css'), 'obsidian-glass should be seeded');
+    assert.ok(list.some((t) => t.id === 'paper-light.theme.css'), 'paper-light should be seeded');
     assert.ok(list.some((t) => t.id === 'pack:carbon-studio' && t.kind === 'pack'), 'carbon-studio pack should be seeded');
-    assert.ok(list.some((t) => t.id === 'pack:rainy-window' && t.category === 'anime' && t.previewUrl), 'rainy-window anime pack should be seeded with preview');
-    assert.ok(list.some((t) => t.id === 'pack:cozy-rain-live' && t.backdropMediaType === 'video' && t.cliBackdropIsGif), 'cozy-rain-live looping video pack should expose animated GIF for CLI');
+    assert.ok(list.some((t) => t.id === 'pack:rainy-window' && t.category === 'anime' && t.previewUrl), 'rainy-window 4K anime pack should be seeded with preview');
+    assert.ok(list.some((t) => t.id === 'pack:cozy-rain-live' && t.backdropMediaType === 'video' && t.cliBackdropIsGif), 'cozy-rain-live 1080p looping video pack should expose animated GIF for CLI');
     assert.ok(list.some((t) => t.id === 'pack:sakura-shrine-gif' && t.isGif && t.category === 'gif'), 'sakura-shrine-gif animated GIF pack should be seeded');
     assert.ok(list.some((t) => t.id === 'pack:snowy-station-gif' && t.isGif), 'snowy-station-gif animated GIF pack should be seeded');
-    assert.ok(list.some((t) => t.id === 'pack:midnight-rain-gif' && t.isGif), 'midnight-rain-gif animated GIF pack should be seeded');
-    assert.ok(list.some((t) => t.id === 'pack:neon-rooftop-gif' && t.isGif), 'neon-rooftop-gif animated GIF pack should be seeded');
     const builtInWps = mgr.listBuiltInWallpapers();
-    assert.ok(builtInWps.length >= 16, 'should expose all 16 bundled real anime/GIF/landscape/video wallpapers');
-    assert.ok(builtInWps.filter((w) => w.cliBgIsGif).length >= 8, 'CLI should have at least 8 built-in animated GIF backgrounds');
+    assert.ok(builtInWps.length >= 9, 'should expose all 9 curated 4K/HD/GIF bundled wallpapers');
+    assert.ok(builtInWps.filter((w) => w.cliBgIsGif).length >= 3, 'CLI should have at least 3 built-in animated GIF backgrounds');
     assert.ok(builtInWps.some((w) => w.mediaType === 'video' && w.posterFilePath && w.posterFilePath.endsWith('.jpg')), 'video wallpapers must expose JPG posterFilePath');
     assert.ok(builtInWps.filter((w) => w.mediaType === 'image').every((w) => !w.filePath.endsWith('.webp')), 'bundled image/GIF wallpapers must not use WebP');
+    // Verify all 6 curated static 4K backdrops are genuine 3840x2160 UHD
+    const readJpegDims = (fp) => {
+      const b = fs.readFileSync(fp);
+      let i = 2;
+      while (i < b.length) {
+        if (b[i] !== 0xff) break;
+        const m = b[i + 1];
+        const len = b.readUInt16BE(i + 2);
+        if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+          return { w: b.readUInt16BE(i + 7), h: b.readUInt16BE(i + 5) };
+        }
+        i += 2 + len;
+      }
+      return { w: 0, h: 0 };
+    };
+    for (const slug of ['tokyo-tower-rain', 'fuji-twilight', 'fuji-mono-light', 'rainy-window', 'balcony-night', 'comet-lake']) {
+      const dims = readJpegDims(path.join(bundledDir, slug, 'assets', 'backdrop.jpg'));
+      assert.strictEqual(dims.w, 3840, `${slug} backdrop width must be 4K (3840), got ${dims.w}`);
+      assert.strictEqual(dims.h, 2160, `${slug} backdrop height must be 4K (2160), got ${dims.h}`);
+    }
     assert.strictEqual(DEFAULT_CONFIG.cli.terminalApplyToDefaultProfile, true, 'CLI should apply to default Windows Terminal profile out of the box');
     assert.strictEqual(DEFAULT_CONFIG.cli.terminalSyncThemeWallpaper, false, 'CLI must stay decoupled from IDE themes by default');
     assert.strictEqual(DEFAULT_CONFIG.cli.altScreenMode, 'auto', 'altScreenMode must default to official auto value');

@@ -1,10 +1,10 @@
 {
-  "name": "Starfall Lake",
+  "name": "Starfall Lake (4K)",
   "author": "Wallhaven Community",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "category": "anime",
   "source": "https://wallhaven.cc/w/2y89my",
-  "description": "Comet streaking across a clear dusk sky over a quiet lakeside town.",
+  "description": "4K UHD anime nightscape of a radiant comet streaking over a still mountain lake and distant village lights.",
   "targets": [
     "ide",
     "app",

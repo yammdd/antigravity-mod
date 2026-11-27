@@ -1,10 +1,10 @@
 {
-  "name": "Mount Fuji Dusk",
+  "name": "Mount Fuji Dusk (4K)",
   "author": "Wallhaven Photography",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "category": "landscape",
   "source": "https://wallhaven.cc/w/1k6ljv",
-  "description": "Real twilight photograph of Mount Fuji rising over a quiet Japanese corner street.",
+  "description": "4K UHD twilight photograph of snowy Mount Fuji rising over a quiet Japanese corner street.",
   "targets": [
     "ide",
     "app",
