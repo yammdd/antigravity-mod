@@ -12,6 +12,9 @@
   <a href="https://github.com/yammdd/antigravity-mod/actions/workflows/ci.yml">
     <img src="https://github.com/yammdd/antigravity-mod/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
+  <a href="https://github.com/yammdd/antigravity-mod/actions/workflows/codeql.yml">
+    <img src="https://github.com/yammdd/antigravity-mod/actions/workflows/codeql.yml/badge.svg" alt="CodeQL" />
+  </a>
   <a href="https://github.com/yammdd/antigravity-mod/releases">
     <img src="https://img.shields.io/github/v/release/yammdd/antigravity-mod?label=release" alt="Latest Release" />
   </a>
@@ -20,6 +23,8 @@
   </a>
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg" alt="Platforms" />
 </p>
+
+> **Disclaimer**: Antigravity Themes is an independent, community-built, UI-only customization tool. It is **not affiliated with, endorsed by, or sponsored by Google LLC**. Google and Antigravity are trademarks of Google LLC. This tool never patches binaries, modifies `app.asar`, or touches account/telemetry data.
 
 ---
 
@@ -51,11 +56,12 @@ Antigravity Themes customizes Google Antigravity across three independent surfac
 | Feature | Antigravity IDE | Antigravity App | Antigravity CLI (`agy`) |
 | :--- | :---: | :---: | :---: |
 | Built-in themes & media | 16 Anime, GIF, Landscape & Video packs + 4 CSS themes | 16 Anime, GIF, Landscape & Video packs + 4 CSS themes | 8 ANSI presets + custom 16-color editor + 8 built-in GIFs |
+| Auto OS Dark / Light sync | `Auto (OS)` live sync via native theme events | `Auto (OS)` live sync via native theme events | Configurable Dark + Light preset pair auto-sync |
 | Shareable packs & presets | `.theme.css` & single-file `.agtheme.zip` packs | `.theme.css` & single-file `.agtheme.zip` packs | Portable `.json` CLI preset export/import |
 | Live QuickCSS & online CSS | Yes (`Ctrl+S` + `https://`) | Yes (`Ctrl+S` + `https://`) | — |
 | Custom local fonts (`.woff2`/`.ttf`/`.otf`) | Yes | Yes | Via terminal profile |
-| Image, animated GIF & video backdrops | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` | `.jpg`, `.png`, `.gif` (+ auto `.mp4`/`.webm` → `.gif`) |
-| Shaders, animations & status UI | Sakura, Rain, Stars, Ken Burns, UI motion | Sakura, Rain, Stars, Ken Burns, UI motion | Windows Terminal HLSL shaders, `runningLightSpeed`, `altScreenMode`, modular `statusLine` |
+| Image, animated GIF & video backdrops | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` (0-FPS idle pause) | `.jpg`, `.png`, `.gif`, `.webm`, `.mp4` (0-FPS idle pause) | `.jpg`, `.png`, `.gif` (+ auto `.mp4`/`.webm` → `.gif`) |
+| Chat polish & diagnostics | Opt-in long code block folding + live DOM selector check | Opt-in long code block folding + live DOM selector check | CLI health diagnostics, HLSL shaders & modular `statusLine` |
 
 ## Installation
 
@@ -69,7 +75,7 @@ Download the latest release from [GitHub Releases](https://github.com/yammdd/ant
 | **macOS** | `Antigravity-Themes-<version>.dmg` | Drag to Applications |
 | **Linux (x64)** | `Antigravity-Themes-<version>.AppImage` | `chmod +x` and run |
 
-Each release includes `SHA256SUMS.txt` so you can verify file integrity (`certutil -hashfile Antigravity-Themes-1.1.0.exe SHA256` on Windows or `sha256sum -c SHA256SUMS.txt` on Linux/macOS).
+Each release includes `SHA256SUMS.txt` so you can verify file integrity (`certutil -hashfile Antigravity-Themes-1.2.0.exe SHA256` on Windows or `sha256sum -c SHA256SUMS.txt` on Linux/macOS).
 
 > **Note on unsigned open-source builds**: Prebuilt executables are compiled directly from this repository via GitHub Actions without a paid code-signing certificate, so Windows SmartScreen or macOS Gatekeeper may prompt on first launch. You can verify the checksum against `SHA256SUMS.txt` or build locally from source.
 

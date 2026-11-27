@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-11-27
+
+### Added
+- **Auto OS Dark/Light Sync across all 3 surfaces**: Added `Auto (OS)` color mode for Antigravity IDE & App (driven by Electron `nativeTheme` events) and `Auto-follow OS Dark / Light` with customizable Dark & Light preset pairs for `agy` CLI and Windows Terminal.
+- **3-Surface Selector Registry & Live Diagnostics**: Added `electron/core/host-selectors.cjs`, Antigravity v2.34–2.35 App/Chat selectors (`sidebar-split`, `conversation-view`, `agent-input-box`, `overview-panel-host`, `step-plan`), read-only CDP selector compatibility checks in **Settings → 3-Surface Diagnostics**, and `runCliDiagnostics()` health checks in both **CLI Studio** and **Settings**.
+- **Opt-in Long Code Block Folding**: Collapse code blocks exceeding 22 lines in IDE Chat and Antigravity App using a zero-`innerHTML`, cleanly reversible DOM wrapper.
+- **CodeQL & CI Security Fitness Gates**: Added `.github/workflows/codeql.yml` and automated test gates enforcing `0 innerHTML`, `0 taskkill`, `0 :has()`, balanced CSS braces, and loopback `Host`/`Origin` validation.
+- **Non-Affiliation & Trademark Disclaimer**: Clarified independent community status in `README.md` and expanded `SECURITY.md`.
+
+### Security & Performance
+- **DNS rebinding & CORS hardening**: `LocalMediaServer` now validates strict loopback `Host` headers (`127.0.0.1:<port>` / `localhost:<port>`) and rejects untrusted cross-site `Origin` headers with `403`.
+- **Safe process launch (zero `taskkill /F`)**: Replaced forced termination in `ide-integration.cjs` with read-only process detection (`tasklist` / `pgrep`) that prompts users to save and close cleanly.
+- **0-FPS Idle Power Saving**: Particle canvas animations and dual-deck video backdrops now pause automatically on window `blur` in addition to `visibilitychange`.
+
 ## [1.1.0] - 2026-11-26
 
 ### Added
