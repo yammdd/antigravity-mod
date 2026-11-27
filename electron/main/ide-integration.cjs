@@ -120,7 +120,7 @@ function configureIdeArgvCdp(enable = true) {
   };
 }
 
-function syncIdeWindowControls(config, forceRestore = false) {
+function syncIdeWindowControls(config, forceRestore = false, systemDark = true) {
   if (process.platform !== 'win32') return;
   const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
   const candidates = [
@@ -129,14 +129,14 @@ function syncIdeWindowControls(config, forceRestore = false) {
   ];
 
   const active = !forceRestore && Boolean(config?.enabled) && config?.applyToIde !== false && config?.syncWindowControls !== false;
-  const ramp = getSurfaceRamp(config);
+  const ramp = getSurfaceRamp(config, systemDark);
   const [r, g, b] = parseRgbTriple(ramp.rgb);
   const bgHex = toHexColor(r, g, b);
   const fgHex = ramp.textPrimary;
   const ansi = buildAnsiPalette({
     ...(config || {}),
-    cli: { ...(config?.cli || {}), presetId: 'custom' },
-  });
+    cli: { ...(config?.cli || {}), presetId: 'custom', autoFollowOs: false },
+  }, systemDark);
   const hasWallpaper = Boolean(config?.wallpaperEnabled && config?.wallpaperId);
 
   for (const settingsPath of candidates) {
@@ -265,8 +265,26 @@ function findExecutables() {
   return { ide: null, app: null };
 }
 
-function launchTargetWithCdp(target = 'ide') {
+function isProcessRunning(exeName) {
   return new Promise((resolve) => {
+    if (!exeName) {
+      resolve(false);
+      return;
+    }
+    if (process.platform === 'win32') {
+      execFile('tasklist', ['/FI', `IMAGENAME eq ${exeName}`, '/NH'], { windowsHide: true }, (_err, stdout) => {
+        resolve(String(stdout || '').toLowerCase().includes(exeName.toLowerCase()));
+      });
+      return;
+    }
+    execFile('pgrep', ['-f', exeName], (_err, stdout) => {
+      resolve(Boolean(String(stdout || '').trim()));
+    });
+  });
+}
+
+function launchTargetWithCdp(target = 'ide') {
+  return new Promise(async (resolve) => {
     if (target === 'ide') configureIdeArgvCdp(true);
     const exes = findExecutables();
     const exe = target === 'app' ? exes.app : exes.ide;
@@ -283,23 +301,25 @@ function launchTargetWithCdp(target = 'ide') {
     }
 
     const exeName = path.basename(exe);
-    const spawnApp = () => {
-      try {
-        const child = spawn(exe, ['--remote-debugging-port=0'], {
-          detached: true,
-          stdio: 'ignore',
-        });
-        child.unref();
-        resolve({ ok: true, message: `Launched ${exeName} with local CDP enabled.` });
-      } catch (err) {
-        resolve({ ok: false, message: err.message });
-      }
-    };
+    const running = await isProcessRunning(exeName);
+    if (running) {
+      resolve({
+        ok: false,
+        needsManualClose: true,
+        message: `${exeName} is already running. Save your work, close it normally, then reopen it (or click Launch again) to attach CDP safely without force-killing.`,
+      });
+      return;
+    }
 
-    if (process.platform === 'win32') {
-      execFile('taskkill', ['/IM', exeName, '/F'], () => setTimeout(spawnApp, 750));
-    } else {
-      spawnApp();
+    try {
+      const child = spawn(exe, ['--remote-debugging-port=0'], {
+        detached: true,
+        stdio: 'ignore',
+      });
+      child.unref();
+      resolve({ ok: true, message: `Launched ${exeName} with local CDP enabled.` });
+    } catch (err) {
+      resolve({ ok: false, message: err.message });
     }
   });
 }

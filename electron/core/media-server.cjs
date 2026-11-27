@@ -55,7 +55,33 @@ class LocalMediaServer {
       }
 
       this.server = http.createServer((req, res) => {
-        res.setHeader('Access-Control-Allow-Origin', '*');
+        // Strict Host header validation (defends against DNS rebinding attacks)
+        const hostHeader = String(req.headers.host || '').toLowerCase();
+        const allowedHosts = new Set([`127.0.0.1:${this.port}`, `localhost:${this.port}`]);
+        if (!allowedHosts.has(hostHeader)) {
+          res.writeHead(403);
+          res.end('Forbidden host');
+          return;
+        }
+
+        // Reject explicit cross-site browser requests from untrusted remote origins
+        const secFetchSite = String(req.headers['sec-fetch-site'] || '').toLowerCase();
+        const origin = String(req.headers.origin || '');
+        const isSafeOrigin =
+          !origin ||
+          origin === 'null' ||
+          /^vscode-file:\/\//i.test(origin) ||
+          /^file:\/\//i.test(origin) ||
+          /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(origin);
+
+        if (!isSafeOrigin || (secFetchSite === 'cross-site' && origin && !isSafeOrigin)) {
+          res.writeHead(403);
+          res.end('Forbidden origin');
+          return;
+        }
+
+        res.setHeader('Access-Control-Allow-Origin', origin && isSafeOrigin ? origin : `http://127.0.0.1:${this.port}`);
+        res.setHeader('Vary', 'Origin');
         res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
