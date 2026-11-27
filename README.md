@@ -55,7 +55,7 @@ Antigravity Themes customizes Google Antigravity across three independent surfac
 
 | Feature | Antigravity IDE | Antigravity App | Antigravity CLI (`agy`) |
 | :--- | :---: | :---: | :---: |
-| Built-in themes & media | 16 Anime, GIF, Landscape & Video packs + 4 CSS themes | 16 Anime, GIF, Landscape & Video packs + 4 CSS themes | 8 ANSI presets + custom 16-color editor + 8 built-in GIFs |
+| Built-in themes & media | 10 curated packs (6 × **4K UHD** Landscape/Anime, 2 × GIF, 1 × 1080p Live Video, 1 × Minimal) + 2 CSS themes | 10 curated packs (6 × **4K UHD** Landscape/Anime, 2 × GIF, 1 × 1080p Live Video, 1 × Minimal) + 2 CSS themes | 8 ANSI presets + custom 16-color editor + 3 crisp animated GIFs |
 | Auto OS Dark / Light sync | `Auto (OS)` live sync via native theme events | `Auto (OS)` live sync via native theme events | Configurable Dark + Light preset pair auto-sync |
 | Shareable packs & presets | `.theme.css` & single-file `.agtheme.zip` packs | `.theme.css` & single-file `.agtheme.zip` packs | Portable `.json` CLI preset export/import |
 | Live QuickCSS & online CSS | Yes (`Ctrl+S` + `https://`) | Yes (`Ctrl+S` + `https://`) | — |
@@ -75,7 +75,7 @@ Download the latest release from [GitHub Releases](https://github.com/yammdd/ant
 | **macOS** | `Antigravity-Themes-<version>.dmg` | Drag to Applications |
 | **Linux (x64)** | `Antigravity-Themes-<version>.AppImage` | `chmod +x` and run |
 
-Each release includes `SHA256SUMS.txt` so you can verify file integrity (`certutil -hashfile Antigravity-Themes-1.2.0.exe SHA256` on Windows or `sha256sum -c SHA256SUMS.txt` on Linux/macOS).
+Each release includes `SHA256SUMS.txt` so you can verify file integrity (`certutil -hashfile Antigravity-Themes-1.2.1.exe SHA256` on Windows or `sha256sum -c SHA256SUMS.txt` on Linux/macOS).
 
 > **Note on unsigned open-source builds**: Prebuilt executables are compiled directly from this repository via GitHub Actions without a paid code-signing certificate, so Windows SmartScreen or macOS Gatekeeper may prompt on first launch. You can verify the checksum against `SHA256SUMS.txt` or build locally from source.
 
@@ -106,7 +106,7 @@ You can change active surfaces anytime using **Change targets** in the sidebar.
 ### Antigravity CLI (`agy`) — Standalone Studio
 - Works completely independently of Antigravity IDE and App.
 - Includes 8 curated 16-color terminal palettes (*Tokyo Night*, *Catppuccin Mocha*, *Rose Pine*, *Nord Frost*, *Gruvbox Dark*, *Cyberpunk Cyan*, *Dracula*, *GitHub Light*), an interactive 16-color **Customize ANSI** editor, and JSON preset import/export.
-- Ships with 8 built-in animated GIFs and automatic short `.mp4`/`.webm` → `.gif` conversion when `ffmpeg` is installed (`winget install Gyan.FFmpeg` / `brew install ffmpeg`).
+- Ships with 3 crisp built-in animated GIFs (1080p/960p) and automatic short `.mp4`/`.webm` → `.gif` conversion when `ffmpeg` is installed (`winget install Gyan.FFmpeg` / `brew install ffmpeg`).
 - Configures `~/.gemini/antigravity-cli/settings.json` (`colorScheme`, `runningLightSpeed`, `altScreenMode`, and modular Node.js `statusLine` with a built-in live self-test).
 - Syncs Windows Terminal (`Antigravity CLI` profile, optional default profile, and 3 built-in HLSL pixel shaders: *Subtle Vignette*, *Soft Bloom*, *CRT Scanlines*) with JSONC-safe parsing and automatic `.agthemes.bak` backup/restore.
 - One-click **Write Config** (with `.agthemes.bak` backup) and copyable snippets for **Ghostty**, **WezTerm**, **Kitty**, and **Alacritty**.

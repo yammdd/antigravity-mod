@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-11-27
+
+### Changed
+- **Curated 4K UHD Theme Collection (10 Packs + 2 CSS)**: Trimmed 9 redundant/low-resolution starter packs and upgraded all 6 static Landscape and Anime packs (*Tokyo Tower Night*, *Mount Fuji Dusk*, *Monochrome Fuji Light*, *Shinjuku Rain*, *Cyberpunk Tokyo Rain*, *Starfall Lake*) to true **4K UHD (`3840×2160`)** high-bitrate photography and illustrations.
+- **Upgraded Live Video to Full HD 1080p 30fps**: Upgraded *Cyberpunk Rain Room* (`cozy-rain-live`) from 720p to a crisp **1920×1080 30fps** VP9 loop with a 1080p poster and sharper `960×540` CLI GIF, reducing total bundled asset footprint by ~37% while dramatically improving sharpness.
+- **Automatic Theme Cache Migration**: Bumped `SEED_VERSION` to `7` in `ThemeManager` so existing installations automatically replace older compressed assets with the new 4K packs and prune removed starter packs.
+
 ## [1.2.0] - 2026-11-27
 
 ### Added
